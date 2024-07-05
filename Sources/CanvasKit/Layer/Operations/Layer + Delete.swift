@@ -20,8 +20,14 @@ extension Layer {
         try manager.setBuffer(selection.buffer)
         
         try manager.perform(gridSize: MTLSize(width: self.width, height: self.height, depth: 1))
-        self.buffer = UnsafeMutableBufferPointer(start: buffer.contents().bindMemory(to: UInt8.self, capacity: self.width * self.height), count: self.width * self.height)
-        self.deallocator = .none
+        
+        self.set(
+            buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: self.width * self.height * 4),
+            width: self.width,
+            height: self.height,
+            origin: self.origin,
+            deallocator: .none
+        )
     }
     
 }

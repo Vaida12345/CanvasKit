@@ -17,6 +17,7 @@ struct TestOperations {
         try print(mask.reverse().boundary)
         
         try layer.delete(selection: mask)
+        try layer.crop(to: mask.reverse().boundary)
         try layer.render().write(to: FinderItem.desktopDirectory.appending(path: "result.png"))
     }
 }
