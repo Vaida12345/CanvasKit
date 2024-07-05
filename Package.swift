@@ -12,14 +12,20 @@ let package = Package(
             name: "CanvasKit",
             targets: ["CanvasKit"]),
     ],
+    dependencies: [
+        .package(name: "MetalManager",
+                 path: "~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/MetalManager"),
+        .package(name: "Stratum",
+                 path: "~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/Stratum")
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "CanvasKit"),
+            name: "CanvasKit", dependencies: ["MetalManager"]),
         .testTarget(
             name: "CanvasKitTests",
-            dependencies: ["CanvasKit"]
+            dependencies: ["CanvasKit", "Stratum"]
         ),
     ]
 )
