@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreGraphics
+import Metal
 
 
 /// An image layer, the direct container to an image buffer.
@@ -87,27 +88,41 @@ public final class Layer: LayerProtocol {
     }
     
     func set(buffer: UnsafeMutableBufferPointer<UInt8>, width: Int, height: Int, origin: CGPoint, deallocator: Data.Deallocator) {
-        switch self.deallocator {
-        case .free:
-            self.buffer.deallocate()
-        case .none:
-            break
-        case .custom(let deallocator):
-            deallocator(buffer.baseAddress!, buffer.count)
-        default:
-            fatalError("The deallocator has not been implemented")
-        }
-        assert(width * height * 4 == buffer.count)
-        
-        self.buffer = buffer
-        self.frame = CGRect(origin: origin, size: CGSize(width: width, height: height))
-        self.deallocator = deallocator
+        self.set(
+            buffer: buffer,
+            frame: CGRect(origin: origin, size: CGSize(width: width, height: height)),
+            deallocator: deallocator
+        )
+    }
+    
+    func set(buffer: any MTLBuffer, width: Int, height: Int, origin: CGPoint) {
+        self.set(
+            buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: width * height * 4),
+            frame: CGRect(origin: origin, size: CGSize(width: width, height: height)),
+            deallocator: .none
+        )
+    }
+    
+    func set(buffer: any MTLBuffer, frame: CGRect) {
+        self.set(
+            buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: width * height * 4),
+            frame: frame,
+            deallocator: .none
+        )
     }
     
     public init(byteNoCopy buffer: UnsafeMutableBufferPointer<UInt8>, origin: CGPoint = .zero, width: Int, height: Int, colorSpace: CGColorSpace, deallocator: Data.Deallocator) {
         assert(width * height * 4 == buffer.count)
         self.buffer = buffer
         self.frame = CGRect(origin: origin, size: CGSize(width: width, height: height))
+        self.deallocator = deallocator
+        self.colorSpace = colorSpace
+    }
+    
+    public init(byteNoCopy buffer: UnsafeMutableBufferPointer<UInt8>, frame: CGRect, colorSpace: CGColorSpace, deallocator: Data.Deallocator) {
+        assert(Int(frame.width) * Int(frame.height) * 4 == buffer.count)
+        self.buffer = buffer
+        self.frame = frame
         self.deallocator = deallocator
         self.colorSpace = colorSpace
     }

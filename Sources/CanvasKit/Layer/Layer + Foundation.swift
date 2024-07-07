@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreGraphics
+import SwiftUI
 
 
 extension Layer {
@@ -39,6 +40,13 @@ extension Layer {
         let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: width * height * 4)
         self.init(byteNoCopy: buffer, origin: .zero, width: width, height: height, colorSpace: colorSpace, deallocator: .free)
         try self.fill(color: fill, selection: Mask(repeating: true, width: width, height: height))
+    }
+    
+    @MainActor
+    public convenience init(_ view: some View, size: CGSize) {
+        let renderer = ImageRenderer(content: view)
+        renderer.proposedSize = .init(size)
+        self.init(renderer.cgImage!)
     }
     
 }
