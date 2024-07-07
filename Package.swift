@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "CanvasKit",
-    platforms: [.macOS(.v10_15), .iOS(.v13), .tvOS(.v13), .watchOS(.v6), .macCatalyst(.v13)],
+    platforms: [.macOS(.v13)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -22,7 +22,7 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "CanvasKit", dependencies: ["MetalManager"]),
+            name: "CanvasKit", dependencies: ["MetalManager", "Stratum"]),
         .testTarget(
             name: "CanvasKitTests",
             dependencies: ["CanvasKit", "Stratum"]

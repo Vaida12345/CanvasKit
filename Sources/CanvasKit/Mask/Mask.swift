@@ -7,9 +7,11 @@
 
 import Foundation
 import MetalManager
+import CoreGraphics
 
 
-public final class Mask {
+/// An immutable mask.
+public final class Mask: LayerProtocol {
     
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
     let buffer: UnsafeMutableBufferPointer<Bool>
@@ -19,6 +21,25 @@ public final class Mask {
     let height: Int
     
     let deallocator: Data.Deallocator
+    
+    
+    /// Determines if the mask is an empty mask.
+    public lazy var isEmpty: Bool = {
+        var y = 0
+        while y < self.height {
+            var x = 0
+            while x < self.width {
+                if self[y ,x] {
+                    return false
+                }
+                
+                x &+= 1
+            }
+            y &+= 1
+        }
+        
+        return true
+    }()
     
     /// The boundary of the mask.
     ///
@@ -113,6 +134,7 @@ public final class Mask {
         return CGRect(x: leading, y: top, width: self.width - trailing - leading, height: self.height - bottom - top)
     }()
     
+    
     public func reverse() throws -> Mask {
         let manager = try MetalManager(name: "mask_reverse", fileWithin: .module)
         try manager.setBuffer(self.buffer)
@@ -121,11 +143,31 @@ public final class Mask {
         return Mask(BytesNoCopy: UnsafeMutableBufferPointer(start: result.contents().assumingMemoryBound(to: Bool.self), count: buffer.count), width: self.width, height: self.height, deallocator: .none)
     }
     
+    public func makeContext() throws -> CGContext {
+        let manager = try MetalManager(name: "mask_render", fileWithin: .module)
+        manager.setConstant(self.width)
+        let result = try manager.setEmptyBuffer(count: self.width * self.height * 4, type: UInt8.self)
+        try manager.setBuffer(self.buffer)
+        try manager.perform(width: self.width, height: self.height)
+        
+        return CGContext(data: result.contents(), width: self.width, height: self.height, bitsPerComponent: 8, bytesPerRow: 4 * self.width, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    }
+    
+    
     init(BytesNoCopy buffer: UnsafeMutableBufferPointer<Bool>, width: Int, height: Int, deallocator: Data.Deallocator) {
         self.buffer = buffer
         self.width = width
         self.height = height
         self.deallocator = deallocator
+    }
+    
+    init(coping buffer: UnsafeMutableBufferPointer<Bool>, width: Int, height: Int) {
+        self.buffer = .allocate(capacity: width * height)
+        buffer.copy(to: self.buffer.baseAddress!, count: width * height)
+        
+        self.width = width
+        self.height = height
+        self.deallocator = .free
     }
     
     deinit {
@@ -141,8 +183,14 @@ public final class Mask {
         }
     }
     
+    /// If returns `true`, there is a mask there, it is selected.
     subscript(_ index: Index) -> Bool {
-        buffer[index.y * width + index.x]
+        self[index.y, index.x]
+    }
+    
+    /// If returns `true`, there is a mask there, it is selected.
+    subscript(y: Int, x: Int) -> Bool {
+        buffer[y &* width &+ x]
     }
     
 }

@@ -5,9 +5,9 @@
 //  Created by Vaida on 7/5/24.
 //
 
-
 import CoreGraphics
 import MetalManager
+import GraphicsKit
 import Metal
 
 
@@ -31,13 +31,9 @@ extension Layer {
             buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: Int(rect.width) * Int(rect.height) * 4),
             width: Int(rect.width),
             height: Int(rect.height),
-            origin: self.origin,
+            origin: self.origin + rect.origin,
             deallocator: .none
         )
-//        print(Array(self.buffer))
-//        print(self.buffer.count, self.width, self.height)
-        
-#warning("What about origin?")
     }
     
 }

@@ -5,6 +5,8 @@
 //  Created by Vaida on 7/5/24.
 //
 
+import CoreGraphics
+
 
 /// The index used for finding the elements.
 ///
@@ -24,6 +26,37 @@ public struct Index {
     public init(y: Int, x: Int) {
         self.y = y
         self.x = x
+    }
+    
+    /// Creates an index.
+    public init(_ point: CGPoint) {
+        let x = Int(point.x.rounded(.toNearestOrAwayFromZero))
+        let y = Int(point.y.rounded(.toNearestOrAwayFromZero))
+        
+        self.init(y: y, x: x)
+    }
+    
+    /// Returns the checked moved index.
+    func move(down: Int, right: Int, width: Int, height: Int) -> Index? {
+        let x = self.x &+ right
+        let y = self.y &+ down
+        
+        if x >= 0 && y >= 0 && x < width && y < height {
+            return Index(y: y, x: x)
+        } else {
+            return nil
+        }
+    }
+    
+    func adjacent(width: Int, height: Int) -> [Index] {
+        var result: [Index] = []
+        let directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  // Right, Down, Left, Up
+        for direction in directions {
+            if let new = self.move(down: direction.0, right: direction.1, width: width, height: height) {
+                result.append(new)
+            }
+        }
+        return result
     }
     
 }

@@ -5,7 +5,6 @@
 //  Created by Vaida on 7/5/24.
 //
 
-
 #include <metal_stdlib>
 using namespace metal;
 

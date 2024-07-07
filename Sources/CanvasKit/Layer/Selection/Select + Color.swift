@@ -8,6 +8,7 @@
 import CoreGraphics
 import MetalManager
 import Metal
+import Stratum
 
 
 public struct SelectByColor: SelectionCriteria {
@@ -15,9 +16,6 @@ public struct SelectByColor: SelectionCriteria {
     let color: Color
     
     let tolerance: UInt8
-    
-    let contagiousFrom: CGPoint?
-    
     
     
     public func select(layer: Layer) throws -> Mask {
@@ -32,17 +30,12 @@ public struct SelectByColor: SelectionCriteria {
         let maskLength = (layer.width * layer.height)
         
         try manager.setBuffer(layer.buffer)
-        let mask = try manager.setEmptyBuffer(count: maskLength, type: UInt8.self)
+        let maskBuffer = try manager.setEmptyBuffer(count: maskLength, type: Bool.self)
         
         try manager.perform(gridSize: MTLSize(width: layer.width, height: layer.height, depth: 1))
         
-        let buffer = mask.contents().bindMemory(to: Bool.self, capacity: maskLength)
-        
-        if let contagiousFrom {
-            fatalError("Not yet implemented")
-        }
-        
-        return Mask(BytesNoCopy: UnsafeMutableBufferPointer(start: buffer, count: maskLength), width: layer.width, height: layer.height, deallocator: .none)
+        let buffer = UnsafeMutableBufferPointer(start: maskBuffer.contents().bindMemory(to: Bool.self, capacity: maskLength), count: maskLength)
+        return Mask(BytesNoCopy: buffer, width: layer.width, height: layer.height, deallocator: .none)
     }
     
 }
@@ -50,8 +43,8 @@ public struct SelectByColor: SelectionCriteria {
 
 extension SelectionCriteria where Self == SelectByColor {
     
-    public static func color(_ color: Color, tolerance: UInt8 = 0, contagiousFrom: CGPoint? = nil) -> SelectByColor {
-        SelectByColor(color: color, tolerance: tolerance, contagiousFrom: contagiousFrom)
+    public static func color(_ color: Color, tolerance: UInt8 = 0) -> SelectByColor {
+        SelectByColor(color: color, tolerance: tolerance)
     }
     
 }

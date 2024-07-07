@@ -18,10 +18,10 @@ public final class Canvas: LayerProtocol {
     var height: Int
     
     
-    public func makeContext() -> CGContext {
+    public func makeContext() throws -> CGContext {
         let context = CGContext(data: nil, width: self.width, height: self.height, bitsPerComponent: 8, bytesPerRow: 4 * self.width, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         for layer in layers {
-            context.draw(layer.render(), in: CGRect(origin: layer.origin, size: CGSize(width: layer.width, height: layer.height)))
+            try context.draw(layer.render(), in: CGRect(origin: layer.origin, size: CGSize(width: layer.width, height: layer.height)))
         }
         return context
     }

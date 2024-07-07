@@ -32,6 +32,22 @@ public final class Layer: LayerProtocol {
         CGContext(data: self.buffer.baseAddress!, width: self.width, height: self.height, bitsPerComponent: 8, bytesPerRow: 4 * self.width, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     }
     
+    /// Returns the color at the given index.
+    ///
+    /// - Parameters:
+    ///   - index: The index of the required color.
+    func color(at index: Index) -> Color {
+        let index = width * index.y + index.x
+        
+        let startIndex = index * 4
+        
+        return Color(red:   buffer[startIndex],
+                     green: buffer[startIndex + 1],
+                     blue:  buffer[startIndex + 2],
+                     alpha: buffer[startIndex + 3]
+        )
+    }
+    
     func set(buffer: UnsafeMutableBufferPointer<UInt8>, width: Int, height: Int, origin: CGPoint, deallocator: Data.Deallocator) {
         switch deallocator {
         case .free:

@@ -12,7 +12,7 @@ import CoreGraphics
 public protocol LayerProtocol {
     
     /// Returns the context which could represent the layer.
-    func makeContext() -> CGContext
+    func makeContext() throws -> CGContext
     
 }
 
@@ -20,8 +20,8 @@ public protocol LayerProtocol {
 public extension LayerProtocol {
     
     /// Render as a CGImage.
-    func render() -> CGImage {
-        self.makeContext().makeImage()!
+    func render() throws -> CGImage {
+        try self.makeContext().makeImage()!
     }
     
 }
