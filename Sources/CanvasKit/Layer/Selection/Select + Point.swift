@@ -17,9 +17,12 @@ public struct SelectByColorFromPoint: SelectionCriteria {
     
     let tolerance: UInt8
     
+    let contagious: Bool
+    
     
     public func select(layer: Layer) throws -> Mask {
         let mask = try SelectByColor(color: layer.color(at: index), tolerance: tolerance).select(layer: layer)
+        guard contagious else { return mask }
         
         let maskLength = (layer.width * layer.height)
         
@@ -52,8 +55,8 @@ public struct SelectByColorFromPoint: SelectionCriteria {
 
 extension SelectionCriteria where Self == SelectByColorFromPoint {
     
-    public static func color(at index: CGPoint, tolerance: UInt8 = 20) -> SelectByColorFromPoint {
-        SelectByColorFromPoint(index: Index(index), tolerance: tolerance)
+    public static func color(at index: CGPoint, tolerance: UInt8 = 20, contagious: Bool = true) -> SelectByColorFromPoint {
+        SelectByColorFromPoint(index: Index(index), tolerance: tolerance, contagious: contagious)
     }
     
 }

@@ -135,7 +135,7 @@ public final class Mask: LayerProtocol {
     }()
     
     
-    public func reverse() throws -> Mask {
+    public func inverse() throws -> Mask {
         let manager = try MetalManager(name: "mask_reverse", fileWithin: .module)
         try manager.setBuffer(self.buffer)
         let result = try manager.setEmptyBuffer(count: self.buffer.count, type: Bool.self)
