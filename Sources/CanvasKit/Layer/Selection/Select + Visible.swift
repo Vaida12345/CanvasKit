@@ -27,7 +27,7 @@ public struct SelectByVisible: SelectionCriteria {
         try manager.perform(gridSize: MTLSize(width: layer.width, height: layer.height, depth: 1))
         
         let buffer = UnsafeMutableBufferPointer(start: maskBuffer.contents().bindMemory(to: Bool.self, capacity: maskLength), count: maskLength)
-        return Mask(BytesNoCopy: buffer, width: layer.width, height: layer.height, deallocator: .none)
+        return Mask(BytesNoCopy: buffer, size: layer.frame.size, deallocator: .none)
     }
     
 }

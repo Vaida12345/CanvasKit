@@ -34,9 +34,7 @@ extension Layer {
         
         self.set(
             buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: self.width * self.height * 4),
-            width: self.width,
-            height: self.height,
-            origin: self.origin,
+            frame: self.frame,
             deallocator: .none
         )
     }

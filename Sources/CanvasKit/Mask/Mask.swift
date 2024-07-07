@@ -16,11 +16,18 @@ public final class Mask: LayerProtocol {
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
     let buffer: UnsafeMutableBufferPointer<Bool>
     
-    let width: Int
-    
-    let height: Int
+    let size: CGSize
     
     let deallocator: Data.Deallocator
+    
+    
+    var width: Int {
+        Int(self.size.width)
+    }
+    
+    var height: Int {
+        Int(self.size.height)
+    }
     
     
     /// Determines if the mask is an empty mask.
@@ -140,7 +147,7 @@ public final class Mask: LayerProtocol {
         try manager.setBuffer(self.buffer)
         let result = try manager.setEmptyBuffer(count: self.buffer.count, type: Bool.self)
         try manager.perform(width: self.buffer.count)
-        return Mask(BytesNoCopy: UnsafeMutableBufferPointer(start: result.contents().assumingMemoryBound(to: Bool.self), count: buffer.count), width: self.width, height: self.height, deallocator: .none)
+        return Mask(BytesNoCopy: UnsafeMutableBufferPointer(start: result.contents().assumingMemoryBound(to: Bool.self), count: buffer.count), size: self.size, deallocator: .none)
     }
     
     public func makeContext() throws -> CGContext {
@@ -154,19 +161,25 @@ public final class Mask: LayerProtocol {
     }
     
     
-    init(BytesNoCopy buffer: UnsafeMutableBufferPointer<Bool>, width: Int, height: Int, deallocator: Data.Deallocator) {
+    init(BytesNoCopy buffer: UnsafeMutableBufferPointer<Bool>, size: CGSize, deallocator: Data.Deallocator) {
         self.buffer = buffer
-        self.width = width
-        self.height = height
+        self.size = size
         self.deallocator = deallocator
     }
     
-    init(coping buffer: UnsafeMutableBufferPointer<Bool>, width: Int, height: Int) {
-        self.buffer = .allocate(capacity: width * height)
-        buffer.copy(to: self.buffer.baseAddress!, count: width * height)
+    init(coping buffer: UnsafeMutableBufferPointer<Bool>, size: CGSize) {
+        let length = Int(size.width) * Int(size.height)
+        self.buffer = .allocate(capacity: length)
+        buffer.copy(to: self.buffer.baseAddress!, count: length)
         
-        self.width = width
-        self.height = height
+        self.size = size
+        self.deallocator = .free
+    }
+    
+    init(repeating bool: Bool, width: Int, height: Int) {
+        self.buffer = .allocate(capacity: width * height)
+        self.buffer.initialize(repeating: bool)
+        self.size = CGSize(width: width, height: height)
         self.deallocator = .free
     }
     

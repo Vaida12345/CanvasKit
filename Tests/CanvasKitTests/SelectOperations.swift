@@ -22,10 +22,11 @@ struct SelectOperations {
         return Layer(image, origin: .zero)
     }
     
-    func writeAndCompare(layer: Layer, folder: String, name: String = "result.png") throws {
+    func writeAndCompare(layer: some LayerProtocol, folder: String, name: String = "result.png") throws {
         let result = tempFolder.appending(path: "\(UUID())_\(name)")
         try layer.render().write(to: result)
         try #require(result.contentsEqual(to: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/TestOperations/select/\(folder)/\(name)"), "Check \"\(result.name)\" in the Temp folder.")
+        try result.remove()
     }
     
     @Test func selectByColor() async throws {
@@ -38,7 +39,8 @@ struct SelectOperations {
         try writeAndCompare(layer: layer, folder: folder)
     }
     
-    @Test func selectByVisible() async throws {
+    @Test
+    func selectByVisible() async throws {
         let folder = "selectByVisible"
         let layer = try loadLayer(folder: folder, name: "source.heic")
 
@@ -68,8 +70,7 @@ struct SelectOperations {
     }
     
     init() throws {
-        self.tempFolder = FinderItem(at: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/Temp")
-        try tempFolder.removeIfExists()
+        self.tempFolder = FinderItem(at: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/Temp/SelectOperations")
         try tempFolder.makeDirectory()
     }
 }

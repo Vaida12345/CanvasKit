@@ -47,7 +47,7 @@ public struct SelectByColorFromPoint: SelectionCriteria {
             }
         }
         
-        return Mask(BytesNoCopy: maskBuffer, width: layer.width, height: layer.height, deallocator: .free)
+        return Mask(BytesNoCopy: maskBuffer, size: layer.frame.size, deallocator: .free)
     }
     
 }

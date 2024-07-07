@@ -14,22 +14,42 @@ public final class Layer: LayerProtocol {
     
     internal private(set) var buffer: UnsafeMutableBufferPointer<UInt8>
     
-    /// The origin relative to the Canvas.
+    /// The frame relative to the Canvas.
     ///
     /// - Invariant: the origin is relative to the canvas, which means this value may be modified when the parent canvas changes in size.
-    internal private(set) var origin: CGPoint
-    
-    internal private(set) var width: Int
-    
-    internal private(set) var height: Int
+    ///
+    /// - Invariant: same as `CoreGraphics`, the origin is the bottom-left corner.
+    internal private(set) var frame: CGRect
     
     internal private(set) var deallocator: Data.Deallocator
     
     let colorSpace: CGColorSpace
     
     
+    var width: Int {
+        Int(self.frame.width)
+    }
+    
+    var height: Int {
+        Int(self.frame.height)
+    }
+    
+    var origin: CGPoint {
+        get {
+            self.frame.origin
+        }
+        set {
+            self.frame.origin = newValue
+        }
+    }
+    
+    var size: CGSize {
+        self.frame.size
+    }
+    
+    
     public func makeContext() -> CGContext {
-        CGContext(data: self.buffer.baseAddress!, width: self.width, height: self.height, bitsPerComponent: 8, bytesPerRow: 4 * self.width, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        CGContext(data: self.buffer.baseAddress!, width: Int(self.frame.width), height: Int(self.frame.height), bitsPerComponent: 8, bytesPerRow: 4 * Int(self.frame.width), space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     }
     
     /// Returns the color at the given index.
@@ -37,7 +57,7 @@ public final class Layer: LayerProtocol {
     /// - Parameters:
     ///   - index: The index of the required color.
     func color(at index: Index) -> Color {
-        let index = width * index.y + index.x
+        let index = Int(self.frame.width) * index.y + index.x
         
         let startIndex = index * 4
         
@@ -48,8 +68,26 @@ public final class Layer: LayerProtocol {
         )
     }
     
+    func set(buffer: UnsafeMutableBufferPointer<UInt8>, frame: CGRect, deallocator: Data.Deallocator) {
+        switch self.deallocator {
+        case .free:
+            self.buffer.deallocate()
+        case .none:
+            break
+        case .custom(let deallocator):
+            deallocator(buffer.baseAddress!, buffer.count)
+        default:
+            fatalError("The deallocator has not been implemented")
+        }
+        assert(Int(frame.width) * Int(frame.height) * 4 == buffer.count)
+        
+        self.buffer = buffer
+        self.frame = frame
+        self.deallocator = deallocator
+    }
+    
     func set(buffer: UnsafeMutableBufferPointer<UInt8>, width: Int, height: Int, origin: CGPoint, deallocator: Data.Deallocator) {
-        switch deallocator {
+        switch self.deallocator {
         case .free:
             self.buffer.deallocate()
         case .none:
@@ -62,18 +100,14 @@ public final class Layer: LayerProtocol {
         assert(width * height * 4 == buffer.count)
         
         self.buffer = buffer
-        self.width = width
-        self.height = height
-        self.origin = origin
+        self.frame = CGRect(origin: origin, size: CGSize(width: width, height: height))
         self.deallocator = deallocator
     }
     
-    public init(byteNoCopy buffer: UnsafeMutableBufferPointer<UInt8>, origin: CGPoint, width: Int, height: Int, colorSpace: CGColorSpace, deallocator: Data.Deallocator) {
+    public init(byteNoCopy buffer: UnsafeMutableBufferPointer<UInt8>, origin: CGPoint = .zero, width: Int, height: Int, colorSpace: CGColorSpace, deallocator: Data.Deallocator) {
         assert(width * height * 4 == buffer.count)
         self.buffer = buffer
-        self.origin = origin
-        self.width = width
-        self.height = height
+        self.frame = CGRect(origin: origin, size: CGSize(width: width, height: height))
         self.deallocator = deallocator
         self.colorSpace = colorSpace
     }
