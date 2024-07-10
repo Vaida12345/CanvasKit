@@ -105,7 +105,7 @@ public final class Layer: LayerProtocol {
     
     func set(buffer: any MTLBuffer, frame: CGRect) {
         self.set(
-            buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: width * height * 4),
+            buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: Int(frame.width) * Int(frame.height) * 4),
             frame: frame,
             deallocator: .none
         )

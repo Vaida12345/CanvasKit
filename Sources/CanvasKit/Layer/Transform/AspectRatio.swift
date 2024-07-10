@@ -19,7 +19,7 @@ public struct AspectRatioTransformation: Transformation {
     public func apply(layer: Layer) throws {
         let size = layer.size.aspectRatio(contentMode, in: containerRect.size)
         let origin = CGRect(center: containerRect.center, size: size).origin
-        print(origin)
+        
         try ResizeTransformation(size: size).apply(layer: layer)
         layer.move(to: origin)
     }

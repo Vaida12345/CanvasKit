@@ -41,9 +41,9 @@ public struct SelectByColor: SelectionCriteria {
 }
 
 
-extension SelectionCriteria where Self == SelectByColor {
+public extension SelectionCriteria where Self == SelectByColor {
     
-    public static func color(_ color: Color, tolerance: UInt8 = 0) -> SelectByColor {
+    static func color(_ color: Color, tolerance: UInt8 = 0) -> SelectByColor {
         SelectByColor(color: color, tolerance: tolerance)
     }
     

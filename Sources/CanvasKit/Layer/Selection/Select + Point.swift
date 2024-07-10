@@ -53,9 +53,9 @@ public struct SelectByColorFromPoint: SelectionCriteria {
 }
 
 
-extension SelectionCriteria where Self == SelectByColorFromPoint {
+public extension SelectionCriteria where Self == SelectByColorFromPoint {
     
-    public static func color(at index: CGPoint, tolerance: UInt8 = 20, contagious: Bool = true) -> SelectByColorFromPoint {
+    static func color(at index: CGPoint, tolerance: UInt8 = 20, contagious: Bool = true) -> SelectByColorFromPoint {
         SelectByColorFromPoint(index: Index(index), tolerance: tolerance, contagious: contagious)
     }
     

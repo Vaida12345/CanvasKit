@@ -6,6 +6,7 @@
 //
 
 import CoreGraphics
+import MetalManager
 
 
 public struct ResizeTransformation: Transformation {
@@ -14,20 +15,20 @@ public struct ResizeTransformation: Transformation {
     
     
     public func apply(layer: Layer) throws {
-        let width = Int(size.width)
-        let height = Int(size.height)
+        let manager = try MetalManager(name: "lanczosResample", fileWithin: .module)
         
-        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: width * height * 4)
-        let context = CGContext(data: buffer.baseAddress!, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: layer.colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-        try context.draw(layer.render(), in: CGRect(origin: .zero, size: size))
+        manager.setConstant(2)
+        manager.setConstant(Int(layer.size.width))
+        manager.setConstant(Int(layer.size.height))
+        manager.setConstant(Int(size.width))
+        manager.setConstant(Int(size.height))
         
-        layer.set(
-            buffer: buffer,
-            width: width,
-            height: height,
-            origin: CGRect(center: layer.frame.center, size: size).origin,
-            deallocator: .free
-        )
+        try manager.setBuffer(layer.buffer)
+        let result = try manager.setEmptyBuffer(count: 4 * Int(size.width) * Int(size.height), type: UInt8.self)
+        
+        try manager.perform(width: Int(size.width), height: Int(size.height))
+        
+        layer.set(buffer: result, frame: CGRect(center: layer.frame.center, size: size))
     }
     
 }

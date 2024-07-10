@@ -167,20 +167,27 @@ public final class Mask: LayerProtocol {
         self.deallocator = deallocator
     }
     
-    init(coping buffer: UnsafeMutableBufferPointer<Bool>, size: CGSize) {
-        let length = Int(size.width) * Int(size.height)
-        self.buffer = .allocate(capacity: length)
-        buffer.copy(to: self.buffer.baseAddress!, count: length)
-        
-        self.size = size
-        self.deallocator = .free
-    }
-    
     init(repeating bool: Bool, width: Int, height: Int) {
         self.buffer = .allocate(capacity: width * height)
         self.buffer.initialize(repeating: bool)
         self.size = CGSize(width: width, height: height)
         self.deallocator = .free
+    }
+    
+    init(width: Int, height: Int, selecting selection: CGRect) throws {
+        let manager = try MetalManager(name: "mask_select", fileWithin: .module)
+        manager.setConstant(width)
+        manager.setConstant(UInt(selection.origin.x))
+        manager.setConstant(UInt(selection.origin.y))
+        manager.setConstant(UInt(selection.width))
+        manager.setConstant(UInt(selection.height))
+        
+        let _buffer = try manager.setEmptyBuffer(count: width * height, type: UInt8.self)
+        try manager.perform(width: width, height: height)
+        
+        self.buffer = UnsafeMutableBufferPointer(start: _buffer.contents().assumingMemoryBound(to: Bool.self), count: width * height)
+        self.size = CGSize(width: width, height: height)
+        self.deallocator = .none
     }
     
     deinit {

@@ -27,5 +27,6 @@ let package = Package(
             name: "CanvasKitTests",
             dependencies: ["CanvasKit", "Stratum"]
         ),
+        .executableTarget(name: "Client", dependencies: ["CanvasKit", "Stratum"])
     ]
 )

@@ -39,4 +39,8 @@ public struct Color: Equatable {
     public static let white: Color = Color(red: 255, green: 255, blue: 255)
     public static let black: Color = Color(red: 0,   green: 0,   blue: 0)
     public static let clear: Color = Color(red: 0,   green: 0,   blue: 0, alpha: 0)
+    
+    public static let red:   Color = Color(red: 255, green: 0,   blue: 0)
+    public static let green: Color = Color(red: 0,   green: 255, blue: 0)
+    public static let blue:  Color = Color(red: 0,   green: 0,   blue: 255)
 }
