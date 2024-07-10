@@ -50,3 +50,16 @@ extension Layer {
     }
     
 }
+
+
+extension Layer: Identifiable {
+    
+}
+
+extension Layer: Equatable {
+    
+    public static func == (_ lhs: Layer, _ rhs: Layer) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+}

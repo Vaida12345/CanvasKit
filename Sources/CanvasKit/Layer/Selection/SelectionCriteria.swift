@@ -17,7 +17,7 @@ public protocol SelectionCriteria {
 
 extension Layer {
     
-    public func select(by criteria: SelectionCriteria = .visible(tolerance: 0)) throws -> Mask {
+    public func select(by criteria: SelectionCriteria = .visible(tolerance: 254)) throws -> Mask {
         try criteria.select(layer: self)
     }
     

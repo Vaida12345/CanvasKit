@@ -35,7 +35,7 @@ public struct SelectByVisible: SelectionCriteria {
 
 public extension SelectionCriteria where Self == SelectByVisible {
     
-    /// The tolerance of 0 would would select pixels with alpha 255.
+    /// The tolerance of 0 would only select pixels with alpha 255.
     ///
     /// The default tolerance is 254, ie, all pixels with non-zero alpha would be selected.
     static func visible(tolerance: UInt8 = 254) -> SelectionCriteria {

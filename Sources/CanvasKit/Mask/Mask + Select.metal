@@ -9,7 +9,7 @@
 using namespace metal;
 
 
-constant int width   [[function_constant(0)]];
+constant int width    [[function_constant(0)]];
 constant uint frame_x [[function_constant(1)]];
 constant uint frame_y [[function_constant(2)]];
 constant uint frame_w [[function_constant(3)]];

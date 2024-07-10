@@ -8,6 +8,8 @@
 import SwiftUI
 import Stratum
 import AppKit
+import GraphicsKit
+
 
 private func makeSampleLayer() throws -> Layer {
     let canvas = CanvasKit.Canvas(width: 256, height: 256)
@@ -39,28 +41,11 @@ private func makeCanvas(layer: Layer, canvas: CanvasKit.Canvas) throws {
     
     try copy.transform(.resize(to: .square(200)))
     
-    let context = copy.makeContext()
-    context.data
-//    context.setShadow(offset: CGSize(width: 10, height: 10), blur: 100, color: .black)
-    
-//    let image = try copy.render()
-//    
-//    let width = copy.width
-//    let height = copy.height
-//    
-//    let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: width * height * 4)
-//    let context = CGContext(data: buffer.baseAddress!, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: layer.colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-//    context.setShadow(offset: CGSize(width: 5, height: -5), blur: 10, color: .black)
-//    
-//    context.draw(image, in: copy.frame)
-//    
-//    copy.set(
-//        buffer: buffer,
-//        width: width,
-//        height: height,
-//        origin: CGRect(center: layer.frame.center, size: layer.size).origin,
-//        deallocator: .free
-//    )
-    
     canvas.add(layer: copy)
+    
+    let shadow = copy.copy()
+    try shadow.fill(color: .black, selection: shadow.select())
+    shadow.origin += CGPoint(x: 10, y: -10)
+    
+    canvas.add(layer: shadow, at: canvas.layers.firstIndex(of: copy)!)
 }
