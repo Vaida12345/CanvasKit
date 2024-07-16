@@ -52,13 +52,13 @@ struct CanvasFoundationTests {
     @Test
     func fillLayer() async throws {
         let layer = try Layer(fill: .init(red: 255, green: 255, blue: 255, alpha: 255), width: 256, height: 256)
-        #expect(layer.buffer.allSatisfy({ $0 == 255 }))
+        #expect(UnsafeMutableBufferPointer(start: layer.buffer.contents().assumingMemoryBound(to: UInt8.self), count: layer.width * layer.height).allSatisfy({ $0 == 255 }))
         
         let copy = layer.copy()
-        #expect(layer.buffer.allSatisfy({ $0 == 255 }))
+        #expect(UnsafeMutableBufferPointer(start: layer.buffer.contents().assumingMemoryBound(to: UInt8.self), count: layer.width * layer.height).allSatisfy({ $0 == 255 }))
         
         try copy.fill(red: 10, green: 10, blue: 10, alpha: 10, selection: copy.select(by: .visible(tolerance: 0)))
-        #expect(copy.buffer.allSatisfy({ $0 == 10 }))
+        #expect(UnsafeMutableBufferPointer(start: layer.buffer.contents().assumingMemoryBound(to: UInt8.self), count: layer.width * layer.height).allSatisfy({ $0 == 10  }))
     }
     
     init() throws {

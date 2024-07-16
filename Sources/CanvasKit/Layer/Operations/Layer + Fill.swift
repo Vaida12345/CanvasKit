@@ -27,15 +27,14 @@ extension Layer {
         manager.setConstant(alpha != nil)
         manager.setConstant(alpha ?? 0)
         
-        let buffer = try manager.setBuffer(self.buffer)
+        try manager.setBuffer(self.buffer)
         try manager.setBuffer(selection.buffer)
         
         try manager.perform(gridSize: MTLSize(width: self.width, height: self.height, depth: 1))
         
         self.set(
-            buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: self.width * self.height * 4),
-            frame: self.frame,
-            deallocator: .none
+            buffer: self.buffer,
+            frame: self.frame
         )
     }
     

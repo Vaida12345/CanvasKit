@@ -27,7 +27,18 @@ extension Layer {
         
         let context = CGContext(data: buffer.baseAddress!, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: 4 * image.width, space: image.colorSpace!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         context.draw(image, in: CGRect(origin: .zero, size: CGSize(width: image.width, height: image.height)))
-        self.init(byteNoCopy: buffer, origin: origin, width: image.width, height: image.height, colorSpace: image.colorSpace!, deallocator: .free)
+        self.init(
+            buffer: CanvasKitConfiguration.computeDevice.makeBuffer(
+                bytes: buffer.baseAddress!,
+                length: buffer.count * MemoryLayout<UInt8>.stride,
+                options: .storageModeShared
+            )!,
+            origin: origin,
+            width: image.width,
+            height: image.height,
+            colorSpace: image.colorSpace!
+        )
+        buffer.deallocate()
     }
     
     /// Initialize the container filled with the given color.
@@ -37,8 +48,12 @@ extension Layer {
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
     public convenience init(fill: Color, width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) throws {
-        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: width * height * 4)
-        self.init(byteNoCopy: buffer, origin: origin, width: width, height: height, colorSpace: colorSpace, deallocator: .free)
+        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
+            length: width * height * 4 * MemoryLayout<UInt8>.stride,
+            options: .storageModeShared
+        )!
+        
+        self.init(buffer: buffer, origin: origin, width: width, height: height, colorSpace: colorSpace)
         try self.fill(color: fill, selection: Mask(repeating: true, width: width, height: height))
     }
     

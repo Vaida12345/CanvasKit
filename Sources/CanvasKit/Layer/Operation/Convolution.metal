@@ -13,7 +13,7 @@ constant int bottomPaddingCount [[function_constant(6)]];
 constant uchar layerIndexes     [[function_constant(7)]];
 
 
-kernel void convolution(device const float* input,
+kernel void convolution(device const uchar* input,
                         device const float* _kernel,
                         device uchar* output,
                         uint3 index [[thread_position_in_grid]]) { // x, y, z
@@ -38,7 +38,7 @@ kernel void convolution(device const float* input,
             }
             
             int colorIndex = position[1] * width + position[0];
-            float color = input[colorIndex * 4 + index.z];
+            float color = (float) input[colorIndex * 4 + index.z];
             sum += color * _kernel[j * kernelWidth + i];
         }
     }

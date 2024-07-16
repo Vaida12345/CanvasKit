@@ -12,6 +12,8 @@ import CoreGraphics
 public protocol LayerProtocol {
     
     /// Returns the context which could represent the layer.
+    ///
+    /// - Important: making the context involves rendering and/or converting buffer from the GPUs, hence is a heavy operation.
     func makeContext() throws -> CGContext
     
 }

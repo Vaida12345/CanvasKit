@@ -20,12 +20,12 @@ public struct SubtractOperation: LayerOperations {
         
         manager.setConstant(layer.width)
         
-        let buffer = try manager.setBuffer(layer.buffer)
+        try manager.setBuffer(layer.buffer)
         try manager.setBuffer(rhs.buffer)
         
         try manager.perform(gridSize: MTLSize(width: layer.width, height: layer.height, depth: 3))
         
-        layer.set(buffer: buffer, frame: layer.frame)
+        layer.set(buffer: layer.buffer, frame: layer.frame)
     }
     
 }

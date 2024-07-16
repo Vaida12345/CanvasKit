@@ -42,13 +42,9 @@ public struct ConvolutionOperation: LayerOperations {
         manager.setConstant(layers.rawValue)
         
         
-        var input = UnsafeMutableBufferPointer<Float>.allocate(capacity: layer.buffer.count)
-        vDSP.convertElements(of: layer.buffer, to: &input)
-        
-        try manager.setBuffer(input)
-        input.deallocate()
+        try manager.setBuffer(layer.buffer)
         try manager.setBuffer(kernel.pointer, length: kernel.count)
-        let buffer = try manager.setEmptyBuffer(count: layer.buffer.count, type: Float.self)
+        let buffer = try manager.setEmptyBuffer(count: layer.width * layer.height * 4, type: UInt8.self)
         
         try manager.perform(gridSize: MTLSize(width: layer.width, height: layer.height, depth: 4))
         

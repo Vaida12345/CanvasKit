@@ -9,10 +9,12 @@
 extension Layer {
     
     /// Copy the layer.
-    public func copy()-> Layer {
-        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: self.buffer.count)
-        self.buffer.copy(to: buffer.baseAddress!, count: self.buffer.count)
-        return Layer(byteNoCopy: buffer, frame: self.frame, colorSpace: self.colorSpace, deallocator: .free)
+    public func copy() -> Layer {
+        Layer(
+            buffer: CanvasKitConfiguration.computeDevice.makeBuffer(bytes: self.buffer.contents(), length: self.width * self.height * 4 * MemoryLayout<UInt8>.stride, options: .storageModeShared)!,
+            frame: self.frame,
+            colorSpace: self.colorSpace
+        )
     }
     
     /// Copy the layer.

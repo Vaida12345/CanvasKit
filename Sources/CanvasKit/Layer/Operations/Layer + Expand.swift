@@ -29,11 +29,10 @@ extension Layer {
         try manager.perform(gridSize: MTLSize(width: Int(rect.width), height: Int(rect.height), depth: 4))
         
         self.set(
-            buffer: UnsafeMutableBufferPointer(start: buffer.contents().assumingMemoryBound(to: UInt8.self), count: Int(rect.width) * Int(rect.height) * 4),
+            buffer: buffer,
             width: Int(rect.width),
             height: Int(rect.height),
-            origin: self.origin + rect.origin,
-            deallocator: .none
+            origin: self.origin + rect.origin
         )
     }
     
