@@ -44,8 +44,14 @@ private func makeCanvas(layer: Layer, canvas: CanvasKit.Canvas) throws {
     canvas.add(layer: copy)
     
     let shadow = copy.copy()
-    try shadow.fill(color: .black, selection: shadow.select())
-    shadow.origin += CGPoint(x: 10, y: -10)
+    try shadow.fill(color: .black, selection: Mask(repeating: true, width: shadow.width, height: shadow.height))
+    try shadow.fill(color: .clear, selection: copy.select().inverse())
+    
+    try shadow.expand(to: CGRect(x: -100, y: -100, width: copy.width + 200, height: copy.height + 200))
+    let kernel = Matrix<Float>.gaussianBlurKernel(size: 81, distribution: 50)
+    
+    try shadow.apply(.convolution(kernel: kernel, layers: .alpha))
+    shadow.origin += CGPoint(x: 10, y: 10)
     
     canvas.add(layer: shadow, at: canvas.layers.firstIndex(of: copy)!)
 }

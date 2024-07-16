@@ -18,6 +18,8 @@ public struct ConvolutionOperation: LayerOperations {
     
     let kernel: Matrix<Float>
     
+    let layers: Layers
+    
     
     public func apply(layer: Layer) throws {
         let manager = try MetalManager(name: "convolution", fileWithin: .module)
@@ -37,6 +39,9 @@ public struct ConvolutionOperation: LayerOperations {
         manager.setConstant(topPaddingCount)
         manager.setConstant(bottomPaddingCount)
         
+        manager.setConstant(layers.rawValue)
+        
+        
         var input = UnsafeMutableBufferPointer<Float>.allocate(capacity: layer.buffer.count)
         vDSP.convertElements(of: layer.buffer, to: &input)
         
@@ -48,6 +53,26 @@ public struct ConvolutionOperation: LayerOperations {
         try manager.perform(gridSize: MTLSize(width: layer.width, height: layer.height, depth: 4))
         
         layer.set(buffer: buffer, frame: layer.frame)
+    }
+    
+    
+    public struct Layers: OptionSet {
+        
+        public let rawValue: UInt8
+        
+        public init(rawValue: UInt8) {
+            self.rawValue = rawValue
+        }
+        
+        
+        public static let red    = Layers(rawValue: 1 << 0)
+        public static let green  = Layers(rawValue: 1 << 1)
+        public static let blue   = Layers(rawValue: 1 << 2)
+        public static let alpha  = Layers(rawValue: 1 << 3)
+        
+        
+        public static let all: Layers = [.red, .green, .blue, .alpha]
+        
     }
     
 }
@@ -72,8 +97,8 @@ extension LayerOperations where Self == ConvolutionOperation {
     /// ```
     ///
     /// The sum of the matrix is one, which would indicate the image received no gain.
-    public static func convolution(kernel: Matrix<Float>) -> ConvolutionOperation {
-        return ConvolutionOperation(kernel: kernel)
+    public static func convolution(kernel: Matrix<Float>, layers: ConvolutionOperation.Layers = .all) -> ConvolutionOperation {
+        return ConvolutionOperation(kernel: kernel, layers: layers)
     }
     
 }

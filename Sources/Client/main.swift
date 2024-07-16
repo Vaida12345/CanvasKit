@@ -32,12 +32,12 @@ private func makeCanvas(layer: Layer, canvas: CanvasKit.Canvas) throws {
     let copy = try layer.copy(selection: mask)
     try copy.fill(color: .red, selection: copy.select())
     
-//    try copy.transform(.resize(to: .square(200)))
+    try copy.transform(.resize(to: .square(200)))
 //    copy.origin = .zero
     
     
     let shadow = copy.copy()
-    try shadow.fill(color: .black, selection: shadow.select(by: .visible(tolerance: 0)))
+    try shadow.fill(color: .black, selection: shadow.select())
     shadow.origin += CGPoint(x: 10, y: -10)
     
     canvas.add(layer: shadow)

@@ -10,12 +10,16 @@ constant int leftPaddingCount   [[function_constant(3)]];
 constant int rightPaddingCount  [[function_constant(4)]];
 constant int topPaddingCount    [[function_constant(5)]];
 constant int bottomPaddingCount [[function_constant(6)]];
+constant uchar layerIndexes     [[function_constant(7)]];
 
 
 kernel void convolution(device const float* input,
                         device const float* _kernel,
                         device uchar* output,
                         uint3 index [[thread_position_in_grid]]) { // x, y, z
+    if ((layerIndexes & 1 << index.z) == 0)
+        return;
+    
     int colorIndex = width * index.y + index.x;
     float sum = 0;
     

@@ -19,7 +19,7 @@ public final class Layer: LayerProtocol {
     ///
     /// - Invariant: the origin is relative to the canvas, which means this value may be modified when the parent canvas changes in size.
     ///
-    /// - Invariant: same as `CoreGraphics`, the origin is the bottom-left corner.
+    /// - Invariant: this implementation does not use `CoreGraphics` for rendering, hence the origin was chosen to be top-left corner.
     internal private(set) var frame: CGRect
     
     internal private(set) var deallocator: Data.Deallocator
