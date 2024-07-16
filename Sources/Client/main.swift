@@ -13,7 +13,7 @@ import AppKit
 
 
 private func makeSampleLayer() throws -> Layer {
-    let canvas = CanvasKit.Canvas(width: 256, height: 256)
+    let canvas = Canvas(width: 256, height: 256)
     
     try canvas.add(layer: Layer(fill: .white, width: 256, height: 256))
     try canvas.add(layer: Layer(fill: .black, width: 256 - 32 * 2, height: 256 - 32 * 2, origin: CGPoint(x: 32, y: 32)))
@@ -46,7 +46,7 @@ private func makeCanvas(layer: Layer, canvas: CanvasKit.Canvas) throws {
 
 
 let layer = try! makeSampleLayer()
-let canvas = CanvasKit.Canvas(layer: layer)
+let canvas = Canvas(layer: layer)
 
 try! makeCanvas(layer: layer, canvas: canvas)
 

@@ -47,7 +47,10 @@ public struct SelectByColorFromPoint: SelectionCriteria {
             }
         }
         
-        return Mask(BytesNoCopy: maskBuffer, size: layer.frame.size, deallocator: .free)
+        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(bytes: maskBuffer.baseAddress!, length: maskLength * MemoryLayout<Bool>.stride, options: .storageModeShared)!
+        maskBuffer.deallocate()
+        
+        return Mask(buffer: buffer, size: layer.frame.size)
     }
     
 }
