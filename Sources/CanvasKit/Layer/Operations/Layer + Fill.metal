@@ -8,24 +8,24 @@
 #include <metal_stdlib>
 using namespace metal;
 
-constant int      width [[function_constant(0)]];
-constant bool    _r     [[function_constant(1)]];
-constant uint8_t  r     [[function_constant(2)]];
-constant bool    _g     [[function_constant(3)]];
-constant uint8_t  g     [[function_constant(4)]];
-constant bool    _b     [[function_constant(5)]];
-constant uint8_t  b     [[function_constant(6)]];
-constant bool    _a     [[function_constant(7)]];
-constant uint8_t  a     [[function_constant(8)]];
+constant int  width [[function_constant(0)]];
+constant bool    _r [[function_constant(1)]];
+constant uint8_t  r [[function_constant(2)]];
+constant bool    _g [[function_constant(3)]];
+constant uint8_t  g [[function_constant(4)]];
+constant bool    _b [[function_constant(5)]];
+constant uint8_t  b [[function_constant(6)]];
+constant bool    _a [[function_constant(7)]];
+constant uint8_t  a [[function_constant(8)]];
 
 
-kernel void layer_fill(device uint8_t* buffer,
+kernel void layer_fill(device uchar* buffer,
                        device const bool* mask,
                        uint2 index [[thread_position_in_grid]]) {
     int maskIndex = index.y * width + index.x;
     int colorIndex = maskIndex * 4;
     
-    int maskBit = mask[maskIndex];
+    bool maskBit = mask[maskIndex];
     
     if (maskBit) {
         if (_r) {

@@ -22,7 +22,7 @@ public struct ConvolutionOperation: LayerOperations {
     
     
     public func apply(layer: Layer) throws {
-        let manager = try MetalManager(name: "convolution", fileWithin: .module)
+        let manager = try MetalManager(name: "convolution", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         //FIXME: only consider odd matrix for now
         let leftPaddingCount = kernel.width / 2
@@ -31,6 +31,7 @@ public struct ConvolutionOperation: LayerOperations {
         let bottomPaddingCount = kernel.height - 1 - topPaddingCount
         
         manager.setConstant(layer.width)
+        manager.setConstant(layer.height)
         manager.setConstant(kernel.width)
         manager.setConstant(kernel.height)
         

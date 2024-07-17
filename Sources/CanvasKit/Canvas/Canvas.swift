@@ -27,9 +27,8 @@ public final class Canvas: LayerProtocol {
     }
     
     public func makeContext() throws -> CGContext {
-        guard let device = MTLCreateSystemDefaultDevice() else { throw MetalManager.Error.cannotCreateMetalDevice }
+        let device = CanvasKitConfiguration.computeDevice
         guard let buffer = device.makeBuffer(length: Int(size.width) * Int(size.height) * 6 * MemoryLayout<UInt8>.size, options: .storageModeShared) else { throw MetalManager.Error.cannotCreateMetalCommandBuffer }
-        print(layers.count)
         
         for layer in layers {
             let manager = try MetalManager(name: "canvas_blend", fileWithin: .module, device: device)

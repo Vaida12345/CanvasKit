@@ -14,7 +14,7 @@ public struct SelectByVisible: SelectionCriteria {
     let tolerance: UInt8
     
     public func select(layer: Layer) throws -> Mask {
-        let manager = try MetalManager(name: "selectByVisible", fileWithin: .module)
+        let manager = try MetalManager(name: "selectByVisible", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(layer.width)
         manager.setConstant(tolerance)

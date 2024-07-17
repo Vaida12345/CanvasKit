@@ -23,14 +23,12 @@ extension Layer {
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
     public convenience init(_ image: CGImage, origin: CGPoint = .zero) {
-        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: image.width * image.height * 4)
-        
-        let context = CGContext(data: buffer.baseAddress!, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: 4 * image.width, space: image.colorSpace!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        let context = CGContext(data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: 4 * image.width, space: image.colorSpace!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         context.draw(image, in: CGRect(origin: .zero, size: CGSize(width: image.width, height: image.height)))
         self.init(
             buffer: CanvasKitConfiguration.computeDevice.makeBuffer(
-                bytes: buffer.baseAddress!,
-                length: buffer.count * MemoryLayout<UInt8>.stride,
+                bytes: context.data!,
+                length: image.width * image.height * 4 * MemoryLayout<UInt8>.stride,
                 options: .storageModeShared
             )!,
             origin: origin,
@@ -38,7 +36,19 @@ extension Layer {
             height: image.height,
             colorSpace: image.colorSpace!
         )
-        buffer.deallocate()
+    }
+    
+    /// Initialize the container with the image given.
+    ///
+    /// The image will be converted into a 8 bits-per-component, with premultiplied last alpha.
+    ///
+    /// - Parameters:
+    ///   - center: The point relative to the canvas.
+    public convenience init(_ image: CGImage, center: CGPoint) {
+        let width = image.width
+        let height = image.height
+        
+        self.init(image, origin: CGRect(center: center, size: CGSize(width: width, height: height)).origin)
     }
     
     /// Initialize the container filled with the given color.
@@ -55,6 +65,27 @@ extension Layer {
         
         self.init(buffer: buffer, origin: origin, width: width, height: height, colorSpace: colorSpace)
         try self.fill(color: fill, selection: Mask(repeating: true, width: width, height: height))
+    }
+    
+    /// Initialize the container filled with the given color.
+    ///
+    /// The image will be converted into a 8 bits-per-component, with premultiplied last alpha.
+    ///
+    /// - Parameters:
+    ///   - origin: The point relative to the canvas.
+    public convenience init(fill: Color, frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) throws {
+        let width = Int(frame.width)
+        let height = Int(frame.height)
+        
+        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
+            length: width * height * 4 * MemoryLayout<UInt8>.stride,
+            options: .storageModeShared
+        )!
+        buffer.label = "Layer.buffer<(\(width), \(height), 4)>(origin: \(#function))"
+        
+        self.init(buffer: buffer, frame: frame, colorSpace: colorSpace)
+        let mask = try Mask(repeating: true, width: width, height: height)
+        try self.fill(color: fill, selection: mask)
     }
     
     @MainActor

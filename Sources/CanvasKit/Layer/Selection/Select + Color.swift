@@ -19,7 +19,7 @@ public struct SelectByColor: SelectionCriteria {
     
     
     public func select(layer: Layer) throws -> Mask {
-        let manager = try MetalManager(name: "selectByColor", fileWithin: .module)
+        let manager = try MetalManager(name: "selectByColor", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(layer.width)
         manager.setConstant(color.red)

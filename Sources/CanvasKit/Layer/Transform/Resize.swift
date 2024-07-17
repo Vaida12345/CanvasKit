@@ -15,7 +15,7 @@ public struct ResizeTransformation: Transformation {
     
     
     public func apply(layer: Layer) throws {
-        let manager = try MetalManager(name: "lanczosResample", fileWithin: .module)
+        let manager = try MetalManager(name: "lanczosResample", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(2)
         manager.setConstant(Int(layer.size.width))

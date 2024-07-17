@@ -17,9 +17,9 @@ public final class Mask: LayerProtocol {
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
     let buffer: any MTLBuffer
     
-    let size: CGSize
+    public let size: CGSize
     
-    let count: Int
+    public let count: Int
     
     
     var width: Int {
@@ -149,7 +149,7 @@ public final class Mask: LayerProtocol {
     
     
     public func inverse() throws -> Mask {
-        let manager = try MetalManager(name: "mask_inverse", fileWithin: .module)
+        let manager = try MetalManager(name: "mask_inverse", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         try manager.setBuffer(self.buffer)
         let result = try manager.setEmptyBuffer(count: self.count, type: Bool.self)
         try manager.perform(width: self.count)
@@ -157,7 +157,7 @@ public final class Mask: LayerProtocol {
     }
     
     public func makeContext() throws -> CGContext {
-        let manager = try MetalManager(name: "mask_render", fileWithin: .module)
+        let manager = try MetalManager(name: "mask_render", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         manager.setConstant(self.width)
         let result = try manager.setEmptyBuffer(count: self.width * self.height * 4, type: UInt8.self)
         try manager.setBuffer(self.buffer)
@@ -174,7 +174,7 @@ public final class Mask: LayerProtocol {
     }
     
     init(repeating bool: Bool, width: Int, height: Int) throws {
-        let manager = try MetalManager(name: "mask_repeat", fileWithin: .module)
+        let manager = try MetalManager(name: "mask_repeat", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         manager.setConstant(bool)
         let _buffer = try manager.setEmptyBuffer(count: width * height, type: Bool.self)
         
@@ -183,10 +183,12 @@ public final class Mask: LayerProtocol {
         self.count = width * height
         self.buffer = _buffer
         self.size = CGSize(width: width, height: height)
+        
+        self.buffer.label = "Mask.buffer<(\(width), \(height))>(origin: \(#function))"
     }
     
     init(width: Int, height: Int, selecting selection: CGRect) throws {
-        let manager = try MetalManager(name: "mask_select", fileWithin: .module)
+        let manager = try MetalManager(name: "mask_select", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         manager.setConstant(width)
         manager.setConstant(UInt(selection.origin.x))
         manager.setConstant(UInt(selection.origin.y))

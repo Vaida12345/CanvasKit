@@ -14,7 +14,7 @@ import MetalManager
 public struct InvertOperation: LayerOperations {
     
     public func apply(layer: Layer) throws {
-        let manager = try MetalManager(name: "invert", fileWithin: .module)
+        let manager = try MetalManager(name: "invert", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(layer.width)
         

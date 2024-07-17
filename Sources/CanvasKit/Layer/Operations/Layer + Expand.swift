@@ -14,7 +14,7 @@ import Metal
 extension Layer {
     
     public func expand(to rect: CGRect) throws {
-        let manager = try MetalManager(name: "layer_expand", fileWithin: .module)
+        let manager = try MetalManager(name: "layer_expand", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(self.width)
         manager.setConstant(self.height)
@@ -26,7 +26,7 @@ extension Layer {
         try manager.setBuffer(self.buffer)
         let buffer = try manager.setEmptyBuffer(count: Int(rect.width) * Int(rect.height) * 4, type: UInt8.self)
         
-        try manager.perform(gridSize: MTLSize(width: Int(rect.width), height: Int(rect.height), depth: 4))
+        try manager.perform(gridSize: MTLSize(width: self.width, height: self.height, depth: 4))
         
         self.set(
             buffer: buffer,

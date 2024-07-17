@@ -15,7 +15,8 @@ extension Layer {
     ///
     /// If a channel is `nil`, that channel is unmodified.
     public func fill(red: UInt8?, green: UInt8?, blue: UInt8?, alpha: UInt8?, selection: Mask) throws {
-        let manager = try MetalManager(name: "layer_fill", fileWithin: .module)
+        precondition(selection.width == self.width && selection.height == self.height)
+        let manager = try MetalManager(name: "layer_fill", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(self.width)
         manager.setConstant(red != nil)
@@ -27,7 +28,11 @@ extension Layer {
         manager.setConstant(alpha != nil)
         manager.setConstant(alpha ?? 0)
         
+        self.buffer.label = "Layer.buffer<(\(self.width), \(self.height), 4)>"
+        selection.buffer.label = "Selection.buffer<(\(selection.width), \(selection.height))>"
+        
         try manager.setBuffer(self.buffer)
+        assert(self.buffer.length == self.width * self.height * 4)
         try manager.setBuffer(selection.buffer)
         
         try manager.perform(gridSize: MTLSize(width: self.width, height: self.height, depth: 1))

@@ -16,7 +16,7 @@ public struct SubtractOperation: LayerOperations {
     
     public func apply(layer: Layer) throws {
         precondition(layer.width == rhs.width && layer.height == rhs.height)
-        let manager = try MetalManager(name: "subtract", fileWithin: .module)
+        let manager = try MetalManager(name: "subtract", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(layer.width)
         

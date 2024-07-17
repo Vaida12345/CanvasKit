@@ -5,50 +5,45 @@
 //  Created by Vaida on 7/10/24.
 //
 
-import SwiftUI
 import Stratum
 @testable
 import CanvasKit
 import AppKit
 
+let destination = FinderItem.downloadsDirectory.appending(path: "Tests")
+try destination.removeIfExists()
+try destination.makeDirectory()
 
-private func makeSampleLayer() throws -> Layer {
-    let canvas = Canvas(width: 256, height: 256)
-    
-    try canvas.add(layer: Layer(fill: .white, width: 256, height: 256))
-    try canvas.add(layer: Layer(fill: .black, width: 256 - 32 * 2, height: 256 - 32 * 2, origin: CGPoint(x: 32, y: 32)))
-    try canvas.add(layer: Layer(fill: .white, width: 256 - 64 * 2, height: 256 - 64 * 2, origin: CGPoint(x: 64, y: 64)))
-    
-    try canvas.render().write(to: FinderItem.downloadsDirectory.appending(path: "file 3.png"))
-    
-    return try Layer(canvas.render())
-}
+let focusRect = CGRect(x: 333, y: 376, width: 359, height: 359)
 
-
-private func makeCanvas(layer: Layer, canvas: CanvasKit.Canvas) throws {
-    canvas.layers.remove(at: 0)
+for i in 0..<10 {
+    let canvas = Canvas(width: 1024, height: 1024)
     
-    let mask = try layer.select(by: .color(.black))
-    let copy = try layer.copy(selection: mask)
-    try copy.fill(color: .red, selection: copy.select())
+    let configuration = NSImage.SymbolConfiguration(pointSize: 359, weight: .regular, scale: .large)
+    let image = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
     
-    try copy.transform(.resize(to: .square(200)))
-//    copy.origin = .zero
+    let focusLayer = Layer(image)
+    try focusLayer.crop(to: focusLayer.select().boundary)
+    try focusLayer.transform(.aspectRatio(.fit, in: focusRect))
+    let focusSelection = try focusLayer.select()
+    try focusLayer.fill(color: .init(red: 94, green: 168, blue: 224), selection: focusSelection)
+    canvas.add(layer: focusLayer)
     
+    let shadow = try Layer(fill: .init(red: 255, green: 255, blue: 255, alpha: 43), frame: focusLayer.frame)
+    try shadow.fill(red: nil, green: nil, blue: nil, alpha: 0, selection: focusSelection.inverse())
+    let rect = CGRect(center: shadow.size.center, size: CGSize(width: 400, height: 400))
+    try shadow.expand(to: rect)
     
-    let shadow = copy.copy()
-    try shadow.fill(color: .black, selection: shadow.select())
-    shadow.origin += CGPoint(x: 10, y: -10)
-    
+    try shadow.apply(.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 7, distribution: 5), layers: .alpha))
+    try shadow.fill(red: nil, green: nil, blue: nil, alpha: 0, selection: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: CGSize(width: 400, height: 400))))
+    shadow.origin += CGPoint(x: 0, y: 3)
     canvas.add(layer: shadow)
-    canvas.add(layer: copy)
+    
+    let innerShadow = try Layer(fill: .init(red: 0, green: 0, blue: 0, alpha: 25), frame: focusLayer.frame)
+    try innerShadow.fill(red: nil, green: nil, blue: nil, alpha: 0, selection: focusSelection)
+    try innerShadow.expand(to: CGRect(center: focusRect.center, size: CGSize(width: 400, height: 400)))
+    try innerShadow.apply(.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 7, distribution: 5), layers: .alpha))
+    canvas.add(layer: innerShadow)
+    
+    try canvas.render().write(to: destination.appending(path: "blend \(i).heic"))
 }
-
-
-let layer = try! makeSampleLayer()
-let canvas = Canvas(layer: layer)
-
-try! makeCanvas(layer: layer, canvas: canvas)
-
-try! FinderItem.downloadsDirectory.appending(path: "file.png").removeIfExists()
-try! canvas.render().write(to: FinderItem.downloadsDirectory.appending(path: "file.png"))

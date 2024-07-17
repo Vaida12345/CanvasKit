@@ -20,20 +20,20 @@ public final class Layer: LayerProtocol {
     /// - Invariant: the origin is relative to the canvas, which means this value may be modified when the parent canvas changes in size.
     ///
     /// - Invariant: this implementation does not use `CoreGraphics` for rendering, hence the origin was chosen to be top-left corner.
-    internal private(set) var frame: CGRect
+    public private(set) var frame: CGRect
     
     let colorSpace: CGColorSpace
     
     
-    var width: Int {
+    public var width: Int {
         Int(self.frame.width)
     }
     
-    var height: Int {
+    public var height: Int {
         Int(self.frame.height)
     }
     
-    var origin: CGPoint {
+    public var origin: CGPoint {
         get {
             self.frame.origin
         }
@@ -42,7 +42,7 @@ public final class Layer: LayerProtocol {
         }
     }
     
-    var size: CGSize {
+    public var size: CGSize {
         self.frame.size
     }
     

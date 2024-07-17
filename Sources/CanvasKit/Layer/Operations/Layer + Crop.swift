@@ -14,7 +14,7 @@ import Metal
 extension Layer {
     
     public func crop(to rect: CGRect) throws {
-        let manager = try MetalManager(name: "layer_crop", fileWithin: .module)
+        let manager = try MetalManager(name: "layer_crop", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
         
         manager.setConstant(self.width)
         manager.setConstant(UInt(rect.origin.x))

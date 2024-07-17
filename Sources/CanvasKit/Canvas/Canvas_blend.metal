@@ -19,7 +19,7 @@ constant int nl_y      [[function_constant(4)]];
 kernel void canvas_blend(device uchar* buffer,
                          device const uchar* newLayer,
                          uint3 index [[thread_position_in_grid]]) { // x, y, color
-    if (int(index.y) < nl_y || int(index.x) < nl_x || int(index.y) > nl_y + nl_height || int(index.x) > nl_x + nl_width)
+    if (int(index.y) < nl_y || int(index.x) < nl_x || int(index.y) >= nl_y + nl_height || int(index.x) >= nl_x + nl_width)
         return;
     
     int colorIndex = (((index.y - nl_y) * nl_width) + (index.x - nl_x)) * 4;
