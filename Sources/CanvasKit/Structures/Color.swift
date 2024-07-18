@@ -13,16 +13,25 @@ import Foundation
 /// The color in `UInt8`.
 public struct Color: Equatable {
     
-    var red: UInt8
+    public var red: UInt8
     
-    var green: UInt8
+    public var green: UInt8
     
-    var blue: UInt8
+    public var blue: UInt8
     
     /// Alpha value
     ///
     /// An alpha of `0` indicates transparent, while `255` indicates full color.
-    var alpha: UInt8
+    public var alpha: UInt8
+    
+    
+    /// Returns a color with the given alpha
+    ///
+    /// - Parameters:
+    ///   - alpha: An alpha of `0` indicates transparent, while `255` indicates full color.
+    public func opacity(_ alpha: UInt8) -> Color {
+        Color(red: self.red, green: self.green, blue: self.blue, alpha: alpha)
+    }
     
     
     public init(red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8 = 255) {

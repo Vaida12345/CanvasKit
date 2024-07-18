@@ -109,7 +109,7 @@ public final class Mask: LayerProtocol {
         if true {
             var index = 0
             while index < width - leading {
-                if let row = checkColumn(i: index, from: top) {
+                if let row = checkColumn(i: width - index - 1, from: top) {
                     break
                 }
                 
@@ -122,7 +122,7 @@ public final class Mask: LayerProtocol {
         if true {
             var index = 0
             while index < height - top {
-                if let column = checkRow(i: index, from: 0, to: width - trailing) {
+                if let column = checkRow(i: height - index - 1, from: 0, to: width - trailing) {
                     break
                 }
                 
@@ -210,7 +210,8 @@ public final class Mask: LayerProtocol {
     
     /// If returns `true`, there is a mask there, it is selected.
     subscript(y: Int, x: Int) -> Bool {
-        self.contents[y &* width &+ x]
+        precondition(y < self.height && x < self.width)
+        return self.contents[y &* width &+ x]
     }
     
 }

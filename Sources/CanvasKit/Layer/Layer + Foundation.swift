@@ -67,6 +67,19 @@ extension Layer {
         try self.fill(color: fill, selection: Mask(repeating: true, width: width, height: height))
     }
     
+    /// Initialize the container filled with clear
+    ///
+    /// - Parameters:
+    ///   - origin: The point relative to the canvas.
+    public convenience init(width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) {
+        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
+            length: width * height * 4 * MemoryLayout<UInt8>.stride,
+            options: .storageModeShared
+        )!
+        
+        self.init(buffer: buffer, origin: origin, width: width, height: height, colorSpace: colorSpace)
+    }
+    
     /// Initialize the container filled with the given color.
     ///
     /// The image will be converted into a 8 bits-per-component, with premultiplied last alpha.
@@ -86,6 +99,23 @@ extension Layer {
         self.init(buffer: buffer, frame: frame, colorSpace: colorSpace)
         let mask = try Mask(repeating: true, width: width, height: height)
         try self.fill(color: fill, selection: mask)
+    }
+    
+    /// Initialize the container filled with clear
+    ///
+    /// - Parameters:
+    ///   - origin: The point relative to the canvas.
+    public convenience init(frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) {
+        let width = Int(frame.width)
+        let height = Int(frame.height)
+        
+        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
+            length: width * height * 4 * MemoryLayout<UInt8>.stride,
+            options: .storageModeShared
+        )!
+        buffer.label = "Layer.buffer<(\(width), \(height), 4)>(origin: \(#function))"
+        
+        self.init(buffer: buffer, frame: frame, colorSpace: colorSpace)
     }
     
     @MainActor

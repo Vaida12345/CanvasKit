@@ -18,7 +18,7 @@ kernel void convolution(device const uchar* input,
                         device const float* _kernel,
                         device uchar* output,
                         uint3 index [[thread_position_in_grid]]) { // x, y, z
-    if ((layerIndexes & 1 << index.z) == 0)
+    if ((layerIndexes & (1 << index.z)) == 0)
         return;
     
     int colorIndex = width * index.y + index.x;

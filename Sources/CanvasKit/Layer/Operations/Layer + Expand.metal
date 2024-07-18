@@ -26,7 +26,6 @@ kernel void layer_expand(device const uint8_t* source,
         return;
     
     int source_index = (index.y * width + index.x) * 4 + index.z;
-    
     int dest_index = (dest_y * frame_width + dest_x) * 4 + index.z;
     
     buffer[dest_index] = source[source_index];
