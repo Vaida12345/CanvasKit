@@ -8,6 +8,7 @@
 
 
 import Foundation
+import SwiftUI
 
 
 /// The color in `UInt8`.
@@ -39,6 +40,16 @@ public struct Color: Equatable {
         self.green = green
         self.blue = blue
         self.alpha = alpha
+    }
+    
+    public init(_ color: SwiftUI.Color) {
+        let color = color.animatableData
+        self.init(
+            red: UInt8(color[0] * 255),
+            green: UInt8(color[1] * 255),
+            blue: UInt8(color[2] * 255),
+            alpha: UInt8(color[3] * 255)
+        )
     }
     
     

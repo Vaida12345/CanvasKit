@@ -8,6 +8,7 @@
 import CoreGraphics
 import MetalManager
 import Metal
+import GraphicsKit
 
 
 /// A canvas, made up of images.
@@ -18,15 +19,14 @@ public final class Canvas: LayerProtocol {
     
     public var size: CGSize
     
-    public func _makeContext() throws -> CGContext {
-        let context = CGContext(data: nil, width: Int(size.width), height: Int(size.width), bitsPerComponent: 8, bytesPerRow: 4 * Int(size.width), space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-        for layer in layers {
-            try context.draw(layer.render(), in: layer.frame)
+    public func makeBuffer() throws -> any MTLBuffer {
+        if layers.count == 1,
+           let layer = layers.first {
+            let copy = layer.copy()
+            try copy.expand(to: CGRect(origin: -copy.origin, size: self.size))
+            return copy.buffer
         }
-        return context
-    }
-    
-    public func makeContext() throws -> CGContext {
+        
         let device = CanvasKitConfiguration.computeDevice
         guard let buffer = device.makeBuffer(length: Int(size.width) * Int(size.height) * 6 * MemoryLayout<UInt8>.size, options: .storageModeShared) else { throw MetalManager.Error.cannotCreateMetalCommandBuffer }
         
@@ -51,11 +51,18 @@ public final class Canvas: LayerProtocol {
         
         try manager.setBuffer(buffer)
         let result = try manager.setEmptyBuffer(count: Int(size.width) * Int(size.height) * 4, type: UInt8.self)
+        result.label = "Canvas.Buffer<\(Int(size.width)), \(Int(size.height)), 4>(origin: Canvas.makeBuffer)"
         
         try manager.perform(width: Int(size.width), height: Int(size.height))
         
+        return result
+    }
+    
+    public func makeContext() throws -> CGContext {
+        let buffer = try self.makeBuffer()
+        
         return CGContext(
-            data: result.contents().assumingMemoryBound(to: UInt8.self),
+            data: buffer.contents(),
             width: Int(size.width),
             height: Int(size.height),
             bitsPerComponent: 8,
