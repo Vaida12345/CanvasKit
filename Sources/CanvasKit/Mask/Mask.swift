@@ -15,7 +15,7 @@ import CoreGraphics
 public final class Mask: LayerProtocol {
     
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
-    let texture: any MTLTexture
+    public let texture: any MTLTexture
     
     var width: Int {
         self.texture.width
@@ -25,16 +25,16 @@ public final class Mask: LayerProtocol {
         self.texture.height
     }
     
-    let context: MetalContext?
+    let context: MetalContext
     
     var size: CGSize {
         CGSize(width: width, height: height)
     }
     
     
-    public lazy var contents: UnsafeMutableBufferPointer<UInt8> = {
-        self.texture.makeBuffer(channelsCount: 1)
-    }()
+    func isEmpty() async throws {
+        
+    }
     
 #if false
     /// Determines if the mask is an empty mask.
@@ -159,8 +159,19 @@ public final class Mask: LayerProtocol {
     
 #endif
     
-    public func makeContext() throws -> CGContext {
-        fatalError()
+    public func makeContext() async throws -> CGContext {
+        try await self.context.synchronize()
+        let contents = self.texture.makeBuffer(channelsCount: 1)
+        
+        return CGContext(
+            data: contents.baseAddress!,
+            width: self.width,
+            height: self.height,
+            bitsPerComponent: 8,
+            bytesPerRow: self.width * 1,
+            space: CGColorSpaceCreateDeviceGray(),
+            bitmapInfo: CGImageAlphaInfo.none.rawValue
+        )!
     }
     
     init(texture: any MTLTexture, context: MetalContext) {
@@ -180,14 +191,10 @@ public final class Mask: LayerProtocol {
         return device.makeTexture(descriptor: descriptor)!
     }
     
-//    /// Creates a texture full of zero. This would indicate nothing is selected.
-//    public convenience init(width: Int, height: Int, context: MetalContext) {
-//        
-//        
-//        self.init(texture: texture, context: context)
-//        self.texture.label = "Layer.Texture<(\(width), \(height), 1)>(origin: \(#function))"
-//    }
-    
+    /// Creates a mask.
+    ///
+    /// - Parameters:
+    ///   - uint8: The mask value. A value of zero would indicate not selected, while any none-zero value would indicate the given pixel is selected.
     public convenience init(repeating uint8: UInt8 = 0, width: Int, height: Int, context: MetalContext) async throws {
         let texture = Mask.makeTexture(width: width, height: height)
         
@@ -199,29 +206,16 @@ public final class Mask: LayerProtocol {
         self.init(texture: texture, context: context)
     }
     
-    public init(width: Int, height: Int, selecting selection: CGRect, context: MetalContext) throws {
-//        let manager = try MetalManager(name: "mask_select", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
-//        manager.setConstant(width)
-//        manager.setConstant(UInt(selection.origin.x))
-//        manager.setConstant(UInt(selection.origin.y))
-//        manager.setConstant(UInt(selection.width))
-//        manager.setConstant(UInt(selection.height))
-//        
-//        let _buffer = try manager.setEmptyBuffer(count: width * height, type: UInt8.self)
-//        try manager.perform(width: width, height: height)
+    /// Creates a mask that selects the `selection`.
+    public convenience init(width: Int, height: Int, selecting selection: CGRect, context: MetalContext) async throws {
+        let texture = Mask.makeTexture(width: width, height: height)
         
-        fatalError()
-    }
-    
-    /// If returns `true`, there is a mask there, it is selected.
-    subscript(_ index: Index) -> UInt8 {
-        self[index.y, index.x]
-    }
-    
-    /// If returns `true`, there is a mask there, it is selected.
-    subscript(y: Int, x: Int) -> UInt8 {
-        precondition(y < self.height && x < self.width)
-        return self.contents[y &* width &+ x]
+        try await MetalFunction(name: "mask_fill_with_selection", bundle: .module)
+            .argument(texture: texture)
+            .argument(bytes: DiscreteRect(selection))
+            .dispatch(to: context.addJob(), width: width, height: height)
+        
+        self.init(texture: texture, context: context)
     }
     
 }

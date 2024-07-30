@@ -79,7 +79,7 @@ extension Layer {
         self.init(width: width, height: height, origin: origin, colorSpace: colorSpace, context: context)
         
         guard fill != .white else { return }
-        try self.fill(color: fill, selection: Mask(repeating: 1, width: width, height: height, context: context))
+        try self.fill(color: fill, selection: Mask(repeating: 255, width: width, height: height, context: context))
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     

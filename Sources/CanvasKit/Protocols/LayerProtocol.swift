@@ -14,7 +14,7 @@ public protocol LayerProtocol {
     /// Returns the context which could represent the layer.
     ///
     /// - Important: making the context involves rendering and/or converting buffer from the GPUs, hence is a heavy operation.
-    func makeContext() throws -> CGContext
+    func makeContext() async throws -> CGContext
     
 }
 
@@ -22,8 +22,8 @@ public protocol LayerProtocol {
 public extension LayerProtocol {
     
     /// Render as a CGImage.
-    func render() throws -> CGImage {
-        try self.makeContext().makeImage()!
+    func render() async throws -> CGImage {
+        try await self.makeContext().makeImage()!
     }
     
 }
