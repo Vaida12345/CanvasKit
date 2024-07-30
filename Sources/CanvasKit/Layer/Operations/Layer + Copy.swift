@@ -24,7 +24,7 @@ extension Layer {
     ///   - selection: If provided, only the selected region will be copied.
     public func copy(selection: Mask) throws -> Layer {
         let copy = self.copy()
-        try copy.delete(selection: selection.inverse())
+        try copy.delete(selection: selection.invert())
         return copy
     }
     

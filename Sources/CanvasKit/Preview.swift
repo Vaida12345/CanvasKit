@@ -45,7 +45,7 @@ private func makeCanvas(layer: Layer, canvas: Canvas) throws {
     
     let shadow = copy.copy()
     try shadow.fill(color: .black, selection: Mask(repeating: true, width: shadow.width, height: shadow.height))
-    try shadow.fill(color: .clear, selection: copy.select().inverse())
+    try shadow.fill(color: .clear, selection: copy.select().invert())
     
     try shadow.expand(to: CGRect(x: -100, y: -100, width: copy.width + 200, height: copy.height + 200))
     let kernel = Matrix<Float>.gaussianBlurKernel(size: 101, distribution: 50)

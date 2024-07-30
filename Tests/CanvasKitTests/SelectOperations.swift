@@ -45,7 +45,7 @@ struct SelectOperations {
         let layer = try loadLayer(folder: folder, name: "source.heic")
 
         let mask = try layer.select(by: .visible())
-        try layer.fill(color: .white, selection: mask.inverse())
+        try layer.fill(color: .white, selection: mask.invert())
         
         try writeAndCompare(layer: layer, folder: folder, name: "result.heic")
     }
@@ -64,7 +64,7 @@ struct SelectOperations {
         let layer = try loadLayer(folder: "selectByColor")
         
         let mask = try layer.select(by: .color(.white, tolerance: 10))
-        try layer.crop(to: mask.inverse().boundary)
+        try layer.crop(to: mask.invert().boundary)
         
         try writeAndCompare(layer: layer, folder: "maskBoundary")
     }

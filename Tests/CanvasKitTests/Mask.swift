@@ -74,11 +74,11 @@ struct MaskSuit {
     
     @Test func mask_inverse() async throws {
         let mask = try await Mask(width: 100, height: 100, selecting: CGRect(origin: .init(x: 25, y: 25), size: .square(50)), context: MetalContext())
-        let inverse = try await mask.inverse()
+        let invert = try await mask.invert()
         
-        try await inverse.context.synchronize()
+        try await invert.context.synchronize()
         
-        for (lhs, rhs) in zip(mask.texture.makeBuffer(channelsCount: 1), inverse.texture.makeBuffer(channelsCount: 1)) {
+        for (lhs, rhs) in zip(mask.texture.makeBuffer(channelsCount: 1), invert.texture.makeBuffer(channelsCount: 1)) {
             try #require(lhs + rhs == .max)
         }
     }

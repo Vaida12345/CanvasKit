@@ -30,7 +30,7 @@ for i in 0..<10 {
     canvas.add(layer: focusLayer)
     
     let shadow = try Layer(fill: .init(red: 255, green: 255, blue: 255, alpha: 43), frame: focusLayer.frame)
-    try shadow.fill(red: nil, green: nil, blue: nil, alpha: 0, selection: focusSelection.inverse())
+    try shadow.fill(red: nil, green: nil, blue: nil, alpha: 0, selection: focusSelection.invert())
     let rect = CGRect(center: shadow.size.center, size: CGSize(width: 400, height: 400))
     try shadow.expand(to: rect)
     

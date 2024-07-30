@@ -79,7 +79,7 @@ public final class Mask: LayerProtocol {
     }
     
     
-    public func inverse() async throws -> Mask {
+    public func invert() async throws -> Mask {
         let newTexture = Mask.makeTexture(width: self.width, height: self.height)
         
         try await MetalFunction(name: "mask_duplicate_inverse", bundle: .module)
