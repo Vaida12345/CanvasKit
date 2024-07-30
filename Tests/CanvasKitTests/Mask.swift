@@ -10,6 +10,8 @@ import Foundation
 @testable
 import CanvasKit
 import Stratum
+@testable
+import MetalManager
 
 
 extension Tag {
@@ -48,6 +50,18 @@ struct MaskSuit {
             folder: "mask_init_select",
             name: "mask_with_selection.png"
         )
+    }
+    
+    @Test func mask_isEmpty() async throws {
+        let mask = try await Mask(repeating: 255, width: 100, height: 100, context: MetalContext())
+        
+        let state = try await mask.isEmpty()
+        #expect(state.content.contents().assumingMemoryBound(to: Bool.self).pointee == true)
+        try await #expect(state.synchronize() == false)
+        
+        let date = Date()
+        try await #expect(mask.isEmpty().synchronize() == false)
+        #expect(date.distance(to: Date()) < 0.0001)
     }
     
     func writeAndCompare(layer: some LayerProtocol, folder: String, name: String = "result.png") async throws {

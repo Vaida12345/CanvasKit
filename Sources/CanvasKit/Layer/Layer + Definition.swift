@@ -8,6 +8,7 @@
 import Foundation
 import CoreGraphics
 import Metal
+import MetalManager
 
 
 /// An image layer, the direct container to an image buffer.

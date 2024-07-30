@@ -8,6 +8,7 @@
 import Foundation
 import CoreGraphics
 import SwiftUI
+import MetalManager
 
 
 extension Layer {

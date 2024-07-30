@@ -31,30 +31,24 @@ public final class Mask: LayerProtocol {
         CGSize(width: width, height: height)
     }
     
+    private var _isEmpty: MetalDependentState<Bool>? = nil
     
-    func isEmpty() async throws {
+    func isEmpty() async throws -> MetalDependentState<Bool> {
+        if let _isEmpty { return _isEmpty }
         
+        let state = MetalDependentState(initialValue: true, context: context)
+        
+        try await MetalFunction(name: "mask_check_full_zeros", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(state: state)
+            .dispatch(to: context.addJob(), width: self.width, height: self.height)
+        
+        self._isEmpty = state
+        
+        return state
     }
     
 #if false
-    /// Determines if the mask is an empty mask.
-    public lazy var isEmpty: Bool = {
-        var y = 0
-        while y < self.height {
-            var x = 0
-            while x < self.width {
-                if self[y ,x] {
-                    return false
-                }
-                
-                x &+= 1
-            }
-            y &+= 1
-        }
-        
-        return true
-    }()
-    
     /// The boundary of the mask.
     ///
     /// For a mask of
