@@ -12,7 +12,7 @@ import CoreGraphics
 
 
 /// An immutable mask.
-public final class Mask: LayerProtocol {
+public final class Mask: LayerProtocol, @unchecked Sendable {
     
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
     public let texture: any MTLTexture
