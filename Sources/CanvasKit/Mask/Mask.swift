@@ -33,7 +33,7 @@ public final class Mask: LayerProtocol {
     
     private var _isEmpty: MetalDependentState<Bool>? = nil
     
-    func isEmpty() async throws -> MetalDependentState<Bool> {
+    public func isEmpty() async throws -> MetalDependentState<Bool> {
         if let _isEmpty { return _isEmpty }
         
         let state = MetalDependentState(initialValue: true, context: context)
@@ -48,7 +48,9 @@ public final class Mask: LayerProtocol {
         return state
     }
     
-#if false
+    
+    private var _boundary: Boundary? = nil
+    
     /// The boundary of the mask.
     ///
     /// For a mask of
@@ -59,99 +61,76 @@ public final class Mask: LayerProtocol {
     /// 0 0 0 0
     /// ```
     /// the boundary is `CGRect(x: 1, y: 1, width: 2, height: 2)`.
-    public lazy var boundary: CGRect = {
+    public func boundary() async throws -> Boundary {
+        if let _boundary { return _boundary }
         
-        func checkRow(i: Int, from: Int = 0, to: Int = width) -> Int? {
-            var index = from
-            while index < to {
-                guard !self[Index(y: i, x: index)] else { return index }
-                index &+= 1
-            }
-            return nil
-        }
-        func checkColumn(i: Int, from: Int = 0, to: Int = height) -> Int? {
-            var index = from
-            while index < to {
-                guard !self[Index(y: index, x: i)] else { return index }
-                index &+= 1
-            }
-            return nil
-        }
+        nonisolated(unsafe)
+        let rows = try MetalManager.computeDevice.makeBuffer(of: Bool.self, count: self.height)
+        nonisolated(unsafe)
+        let columns = try MetalManager.computeDevice.makeBuffer(of: Bool.self, count: self.width)
         
-        var top = 0
-        var bottom = 0
-        var leading = 0
-        var trailing = 0
+        try await MetalFunction(name: "mask_check_zeros_by_rows_columns", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(buffer: rows)
+            .argument(buffer: columns)
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
         
-        // check from up
-        if true {
-            var index = 0
-            while index < height {
-                if let column = checkRow(i: index) {
-                    break
-                }
-                
-                index &+= 1
-                top = index
-            }
-            
-            if index == height {
-                return CGRect(x: 0, y: 0, width: width, height: height)
-            }
-        }
-        
-        // check trailing
-        if true {
-            var index = 0
-            while index < width - leading {
-                if let row = checkColumn(i: width - index - 1, from: top) {
-                    break
-                }
-                
-                index &+= 1
-                trailing = index
-            }
-        }
-        
-        // check bottom
-        if true {
-            var index = 0
-            while index < height - top {
-                if let column = checkRow(i: height - index - 1, from: 0, to: width - trailing) {
-                    break
-                }
-                
-                index &+= 1
-                bottom = index
-            }
-        }
-        
-        // check leading
-        if true {
-            var index = 0
-            while index < width {
-                if let row = checkColumn(i: index, from: top, to: height - bottom) {
-                    break
-                }
-                
-                index &+= 1
-                leading = index
-            }
-        }
-        
-        return CGRect(x: leading, y: top, width: self.width - trailing - leading, height: self.height - bottom - top)
-    }()
-    
-    
-    public func inverse() throws -> Mask {
-        let manager = try MetalManager(name: "mask_inverse", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
-        try manager.setBuffer(self.buffer)
-        let result = try manager.setEmptyBuffer(count: self.count, type: Bool.self)
-        try manager.perform(width: self.count)
-        return Mask(buffer: result, size: self.size)
+        return Boundary(context: self.context, rows: rows, columns: columns, rowsCount: self.height, columnsCount: self.width)
     }
     
-#endif
+    
+    public func inverse() async throws -> Mask {
+        let newTexture = Mask.makeTexture(width: self.width, height: self.height)
+        
+        try await MetalFunction(name: "mask_duplicate_inverse", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newTexture)
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+        
+        newTexture.label = "Mask.Texture<(\(width), \(height))>(inverseOf: \(self.texture.label ?? "(unknown)"))"
+        return Mask(texture: newTexture, context: self.context)
+    }
+    
+    /// Expand the Mask.
+    ///
+    /// The `origin` is the point relative to the original `(0, 0)`.
+    ///
+    /// The current layer would be drawn on the new layer using this computation:
+    /// ```swift
+    /// newPixel.position = oldPixel.position - rect.origin
+    /// ```
+    ///
+    /// This is intuitive, for example
+    ///
+    /// If you would like it to stay at the center of the canvas, use
+    ///
+    /// ``` swift
+    /// CGRect(center: self.frame.center, size: size)
+    /// ```
+    ///
+    /// - If `size > frame.size`, the origin is a negative number, the new pixels are mapped to a higher index.
+    /// - If `size < frame.size`, the origin is a positive number, the new pixels are mapped to a lower index.
+    ///
+    /// To explicitly state the origin on the *new* canvas, use
+    ///
+    /// ```swift
+    /// CGRect(origin: -origin_on_new_canvas, size: size)
+    /// ```
+    public func expanding(to rect: CGRect) async throws -> Mask {
+        let width = Int(rect.width)
+        let height = Int(rect.height)
+        
+        let newTexture = Mask.makeTexture(width: width, height: height)
+        newTexture.label = "Mask.Texture<(\(width), \(height))>(expandOf: \(self.texture.label ?? "(unknown)"), by: \(rect))"
+        
+        try await MetalFunction(name: "mask_expand", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newTexture)
+            .argument(bytes: DiscreteRect(rect))
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+        
+        return Mask(texture: newTexture, context: self.context)
+    }
     
     public func makeContext() async throws -> CGContext {
         try await self.context.synchronize()
@@ -197,6 +176,7 @@ public final class Mask: LayerProtocol {
             .argument(bytes: UInt32(uint8))
             .dispatch(to: context.addJob(), width: width, height: height)
         
+        texture.label = "Mask.Texture<(\(width), \(height))>(origin: \(#function))"
         self.init(texture: texture, context: context)
     }
     
@@ -209,6 +189,7 @@ public final class Mask: LayerProtocol {
             .argument(bytes: DiscreteRect(selection))
             .dispatch(to: context.addJob(), width: width, height: height)
         
+        texture.label = "Mask.Texture<(\(width), \(height))>(origin: \(#function))"
         self.init(texture: texture, context: context)
     }
     

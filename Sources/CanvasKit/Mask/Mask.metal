@@ -30,7 +30,7 @@ kernel void mask_fill_with_selection(texture2d<uint, access::write> texture,
 
 
 kernel void mask_check_full_zeros(texture2d<uint, access::read> texture [[texture(0)]],
-                                  device atomic_bool* result [[buffer(0)]],
+                                  device bool* result [[buffer(0)]],
                                   uint2 position [[thread_position_in_grid]]) {
     // Read the pixel value at the current position
     uint pixelValue = texture.read(position).r;
@@ -38,7 +38,42 @@ kernel void mask_check_full_zeros(texture2d<uint, access::read> texture [[textur
     // Check if the pixel is non-zero
     if (pixelValue != 0) {
         // Atomic update to indicate that a non-zero value is found
-        atomic_store_explicit(result, false, memory_order_relaxed);
-//        result = false;
+        *result = false;
     }
+}
+
+
+kernel void mask_check_zeros_by_rows_columns(texture2d<uint, access::read> texture [[texture(0)]],
+                                     device bool* rows [[buffer(0)]],
+                                     device bool* columns [[buffer(1)]],
+                                     uint2 position [[thread_position_in_grid]]) {
+    // Read the pixel value at the current position
+    uint pixelValue = texture.read(position).r;
+    
+    // Check if the pixel is non-zero
+    if (pixelValue != 0) {
+        rows[position.y] = true;
+        columns[position.x] = true;
+    }
+}
+
+
+kernel void mask_duplicate_inverse(texture2d<uint, access::read>  input  [[texture(0)]],
+                                   texture2d<uint, access::write> output [[texture(1)]],
+                                   uint2 position [[thread_position_in_grid]]) {
+    output.write(255 - input.read(position).r, position);
+}
+
+
+kernel void mask_expand(texture2d<uint, access::read>  input  [[texture(0)]],
+                        texture2d<uint, access::write> output [[texture(1)]],
+                        constant DiscreteRect& rect,
+                        uint2 position [[thread_position_in_grid]]) {
+    uint2 dest = position - rect.origin;
+    
+    if (dest.x < 0 || dest.y < 0 || dest.x >= rect.size.x || dest.y >= rect.size.y)
+        return;
+    
+    uint pixelValue = input.read(position).r;
+    output.write(pixelValue, dest);
 }

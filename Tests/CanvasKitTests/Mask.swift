@@ -64,7 +64,38 @@ struct MaskSuit {
         #expect(date.distance(to: Date()) < 0.0001)
     }
     
-    func writeAndCompare(layer: some LayerProtocol, folder: String, name: String = "result.png") async throws {
+    @Test func mask_boundary() async throws {
+        let selection = CGRect(origin: .init(x: 2, y: 2), size: .square(6))
+        let mask = try await Mask(width: 10, height: 10, selecting: selection, context: MetalContext())
+        let boundary = try await mask.boundary()
+        
+        try await #expect(boundary.makeCGRect() == selection)
+    }
+    
+    @Test func mask_inverse() async throws {
+        let mask = try await Mask(width: 100, height: 100, selecting: CGRect(origin: .init(x: 25, y: 25), size: .square(50)), context: MetalContext())
+        let inverse = try await mask.inverse()
+        
+        try await inverse.context.synchronize()
+        
+        for (lhs, rhs) in zip(mask.texture.makeBuffer(channelsCount: 1), inverse.texture.makeBuffer(channelsCount: 1)) {
+            try #require(lhs + rhs == .max)
+        }
+    }
+    
+    @Test func mask_expand() async throws {
+        let mask = try await Mask(repeating: 255, width: 100, height: 100, context: MetalContext())
+        let newMask = try await mask.expanding(to: CGRect(origin: .zero, size: .square(200)))
+        
+        try await writeAndCompare(
+            layer: newMask,
+            folder: "mask_expand",
+            name: "expanded_mask.png"
+        )
+    }
+    
+    
+    private func writeAndCompare(layer: some LayerProtocol, folder: String, name: String = "result.png") async throws {
         let result = tempFolder.appending(path: folder + "/" + name)
         try result.generateDirectory()
         try await layer.render().write(to: result)

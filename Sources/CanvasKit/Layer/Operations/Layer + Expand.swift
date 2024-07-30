@@ -15,6 +15,8 @@ extension Layer {
     
     /// Expand the Layer.
     ///
+    /// The `origin` is the point relative to the original `(0, 0)`.
+    ///
     /// The current layer would be drawn on the new layer using this computation:
     /// ```swift
     /// newPixel.position = oldPixel.position - rect.origin
