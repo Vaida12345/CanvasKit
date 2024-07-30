@@ -12,7 +12,7 @@ import SwiftUI
 
 
 /// The color in `UInt8`.
-public struct Color: Equatable {
+public struct Color: Equatable, Sendable {
     
     public var red: UInt8
     
@@ -53,8 +53,8 @@ public struct Color: Equatable {
     }
     
     
-    static let allKeyPaths: [WritableKeyPath<Color, UInt8>] = [\.red, \.green, \.blue, \.alpha]
-    static let colorKeyPaths: [WritableKeyPath<Color, UInt8>] = [\.red, \.green, \.blue]
+    nonisolated(unsafe) static let allKeyPaths: [WritableKeyPath<Color, UInt8>] = [\.red, \.green, \.blue, \.alpha]
+    nonisolated(unsafe) static let colorKeyPaths: [WritableKeyPath<Color, UInt8>] = [\.red, \.green, \.blue]
     
     public static let white: Color = Color(red: 255, green: 255, blue: 255)
     public static let black: Color = Color(red: 0,   green: 0,   blue: 0)

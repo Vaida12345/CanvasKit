@@ -7,6 +7,7 @@
 
 
 import Metal
+import MetalManager
 
 
 /// The global setup.
@@ -15,6 +16,13 @@ public enum CanvasKitConfiguration {
     /// The default Metal compute device.
     ///
     /// This device is used to make computations and create buffers.
-    public static var computeDevice = MTLCreateSystemDefaultDevice()!
+    nonisolated(unsafe) public static var computeDevice: any MTLDevice {
+        get {
+            MetalManager.computeDevice
+        }
+        set {
+            MetalManager.computeDevice = newValue
+        }
+    }
     
 }

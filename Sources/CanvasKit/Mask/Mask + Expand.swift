@@ -4,7 +4,7 @@
 //
 //  Created by Vaida on 7/17/24.
 //
-
+#if false
 import CoreGraphics
 import MetalManager
 import GraphicsKit
@@ -33,3 +33,4 @@ extension Mask {
     }
     
 }
+#endif

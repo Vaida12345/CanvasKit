@@ -9,7 +9,7 @@ import SwiftUI
 import Stratum
 import AppKit
 import GraphicsKit
-
+#if false
 
 private func makeSampleLayer() throws -> Layer {
     let canvas = Canvas(width: 256, height: 256)
@@ -55,3 +55,4 @@ private func makeCanvas(layer: Layer, canvas: Canvas) throws {
     
     canvas.add(layer: shadow, at: canvas.layers.firstIndex(of: copy)!)
 }
+#endif

@@ -6,6 +6,7 @@
 //
 
 
+#if false
 extension Layer {
     
     /// Copy the layer.
@@ -28,3 +29,4 @@ extension Layer {
     }
     
 }
+#endif

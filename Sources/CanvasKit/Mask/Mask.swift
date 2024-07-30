@@ -15,27 +15,28 @@ import CoreGraphics
 public final class Mask: LayerProtocol {
     
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
-    let buffer: any MTLBuffer
-    
-    public let size: CGSize
-    
-    public let count: Int
-    
+    let texture: any MTLTexture
     
     var width: Int {
-        Int(self.size.width)
+        self.texture.width
     }
     
     var height: Int {
-        Int(self.size.height)
+        self.texture.height
+    }
+    
+    let context: MetalContext?
+    
+    var size: CGSize {
+        CGSize(width: width, height: height)
     }
     
     
-    public lazy var contents: UnsafeMutableBufferPointer<Bool> = {
-        UnsafeMutableBufferPointer(start: self.buffer.contents().assumingMemoryBound(to: Bool.self), count: self.buffer.length / MemoryLayout<Bool>.stride)
+    public lazy var contents: UnsafeMutableBufferPointer<UInt8> = {
+        self.texture.makeBuffer(channelsCount: 1)
     }()
     
-    
+#if false
     /// Determines if the mask is an empty mask.
     public lazy var isEmpty: Bool = {
         var y = 0
@@ -156,60 +157,69 @@ public final class Mask: LayerProtocol {
         return Mask(buffer: result, size: self.size)
     }
     
+#endif
+    
     public func makeContext() throws -> CGContext {
-        let manager = try MetalManager(name: "mask_render", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
-        manager.setConstant(self.width)
-        let result = try manager.setEmptyBuffer(count: self.width * self.height * 4, type: UInt8.self)
-        try manager.setBuffer(self.buffer)
-        try manager.perform(width: self.width, height: self.height)
-        
-        return CGContext(data: result.contents(), width: self.width, height: self.height, bitsPerComponent: 8, bytesPerRow: 4 * self.width, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        fatalError()
     }
     
-    
-    init(buffer: any MTLBuffer, size: CGSize) {
-        self.buffer = buffer
-        self.size = size
-        self.count = Int(size.width) * Int(size.height)
+    init(texture: any MTLTexture, context: MetalContext) {
+        self.texture = texture
+        self.context = context
     }
     
-    init(repeating bool: Bool, width: Int, height: Int) throws {
-        let manager = try MetalManager(name: "mask_repeat", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
-        manager.setConstant(bool)
-        let _buffer = try manager.setEmptyBuffer(count: width * height, type: Bool.self)
+    private static func makeTexture(width: Int, height: Int) -> any MTLTexture {
+        let descriptor = MTLTextureDescriptor()
+        descriptor.height = height
+        descriptor.width = width
+        descriptor.pixelFormat = .r8Uint
+        descriptor.usage = .shaderReadWrite
+        descriptor.storageMode = .shared
         
-        try manager.perform(width: width * height, height: 1)
-        
-        self.count = width * height
-        self.buffer = _buffer
-        self.size = CGSize(width: width, height: height)
-        
-        self.buffer.label = "Mask.buffer<(\(width), \(height))>(origin: \(#function))"
+        let device = CanvasKitConfiguration.computeDevice
+        return device.makeTexture(descriptor: descriptor)!
     }
     
-    init(width: Int, height: Int, selecting selection: CGRect) throws {
-        let manager = try MetalManager(name: "mask_select", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
-        manager.setConstant(width)
-        manager.setConstant(UInt(selection.origin.x))
-        manager.setConstant(UInt(selection.origin.y))
-        manager.setConstant(UInt(selection.width))
-        manager.setConstant(UInt(selection.height))
+//    /// Creates a texture full of zero. This would indicate nothing is selected.
+//    public convenience init(width: Int, height: Int, context: MetalContext) {
+//        
+//        
+//        self.init(texture: texture, context: context)
+//        self.texture.label = "Layer.Texture<(\(width), \(height), 1)>(origin: \(#function))"
+//    }
+    
+    public convenience init(repeating uint8: UInt8 = 0, width: Int, height: Int, context: MetalContext) async throws {
+        let texture = Mask.makeTexture(width: width, height: height)
         
-        let _buffer = try manager.setEmptyBuffer(count: width * height, type: UInt8.self)
-        try manager.perform(width: width, height: height)
+        try await MetalFunction(name: "mask_fill_with", bundle: .module)
+            .argument(texture: texture)
+            .argument(bytes: UInt32(uint8))
+            .dispatch(to: context.addJob(), width: width, height: height)
         
-        self.count = width * height
-        self.buffer = _buffer
-        self.size = CGSize(width: width, height: height)
+        self.init(texture: texture, context: context)
+    }
+    
+    public init(width: Int, height: Int, selecting selection: CGRect, context: MetalContext) throws {
+//        let manager = try MetalManager(name: "mask_select", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
+//        manager.setConstant(width)
+//        manager.setConstant(UInt(selection.origin.x))
+//        manager.setConstant(UInt(selection.origin.y))
+//        manager.setConstant(UInt(selection.width))
+//        manager.setConstant(UInt(selection.height))
+//        
+//        let _buffer = try manager.setEmptyBuffer(count: width * height, type: UInt8.self)
+//        try manager.perform(width: width, height: height)
+        
+        fatalError()
     }
     
     /// If returns `true`, there is a mask there, it is selected.
-    subscript(_ index: Index) -> Bool {
+    subscript(_ index: Index) -> UInt8 {
         self[index.y, index.x]
     }
     
     /// If returns `true`, there is a mask there, it is selected.
-    subscript(y: Int, x: Int) -> Bool {
+    subscript(y: Int, x: Int) -> UInt8 {
         precondition(y < self.height && x < self.width)
         return self.contents[y &* width &+ x]
     }

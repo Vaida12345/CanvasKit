@@ -12,30 +12,18 @@ import SwiftUI
 
 extension Layer {
     
-    public func move(to point: CGPoint) {
-        self.origin = point
-    }
-    
     /// Initialize the container with the image given.
     ///
     /// The image will be converted into a 8 bits-per-component, with premultiplied last alpha.
     ///
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
-    public convenience init(_ image: CGImage, origin: CGPoint = .zero) {
-        let context = CGContext(data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: 4 * image.width, space: image.colorSpace!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-        context.draw(image, in: CGRect(origin: .zero, size: CGSize(width: image.width, height: image.height)))
-        self.init(
-            buffer: CanvasKitConfiguration.computeDevice.makeBuffer(
-                bytes: context.data!,
-                length: image.width * image.height * 4 * MemoryLayout<UInt8>.stride,
-                options: .storageModeShared
-            )!,
-            origin: origin,
-            width: image.width,
-            height: image.height,
-            colorSpace: image.colorSpace!
-        )
+    public convenience init(_ image: CGImage, origin: CGPoint = .zero, context: MetalContext) throws {
+        let device = CanvasKitConfiguration.computeDevice
+        let texture = try device.makeTexture(from: image, usage: .shaderReadWrite)
+        
+        self.init(texture: texture, frame: CGRect(origin: origin, size: CGSize(width: image.width, height: image.height)), colorSpace: image.colorSpace!, context: context)
+        self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
     /// Initialize the container with the image given.
@@ -44,11 +32,55 @@ extension Layer {
     ///
     /// - Parameters:
     ///   - center: The point relative to the canvas.
-    public convenience init(_ image: CGImage, center: CGPoint) {
+    public convenience init(_ image: CGImage, center: CGPoint, context: MetalContext) throws {
         let width = image.width
         let height = image.height
         
-        self.init(image, origin: CGRect(center: center, size: CGSize(width: width, height: height)).origin)
+        try self.init(image, origin: CGRect(center: center, size: CGSize(width: width, height: height)).origin, context: context)
+        self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
+    }
+    
+    /// Initialize the container filled with clear
+    ///
+    /// - Parameters:
+    ///   - origin: The point relative to the canvas.
+    public convenience init(width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) {
+        let descriptor = MTLTextureDescriptor()
+        descriptor.height = height
+        descriptor.width = width
+        descriptor.pixelFormat = .rgba8Unorm
+        descriptor.usage = .shaderReadWrite
+        descriptor.storageMode = .shared
+        
+        let device = CanvasKitConfiguration.computeDevice
+        let texture = device.makeTexture(descriptor: descriptor)!
+        
+        self.init(texture: texture, frame: CGRect(origin: origin, size: CGSize(width: width, height: height)), colorSpace: colorSpace, context: context)
+        self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
+    }
+    
+    /// Initialize the container filled with clear
+    ///
+    /// - Parameters:
+    ///   - origin: The point relative to the canvas.
+    public convenience init(frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) {
+        self.init(width: Int(frame.width), height: Int(frame.height), origin: frame.origin, colorSpace: colorSpace, context: context)
+        self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
+    }
+    
+#if false
+    /// Initialize the container filled with the given color.
+    ///
+    /// The image will be converted into a 8 bits-per-component, with premultiplied last alpha.
+    ///
+    /// - Parameters:
+    ///   - origin: The point relative to the canvas.
+    public convenience init(fill: Color, width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) throws {
+        self.init(width: width, height: height, origin: origin, colorSpace: colorSpace, context: context)
+        
+        guard fill != .white else { return }
+        try self.fill(color: fill, selection: Mask(repeating: 1, width: width, height: height, context: context))
+        self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
     /// Initialize the container filled with the given color.
@@ -57,72 +89,18 @@ extension Layer {
     ///
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
-    public convenience init(fill: Color, width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) throws {
-        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
-            length: width * height * 4 * MemoryLayout<UInt8>.stride,
-            options: .storageModeShared
-        )!
+    public convenience init(fill: Color, frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) throws {
+        try self.init(fill: fill, width: Int(frame.width), height: Int(frame.height), colorSpace: colorSpace, context: context)
         
-        self.init(buffer: buffer, origin: origin, width: width, height: height, colorSpace: colorSpace)
-        try self.fill(color: fill, selection: Mask(repeating: true, width: width, height: height))
+        self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
-    
-    /// Initialize the container filled with clear
-    ///
-    /// - Parameters:
-    ///   - origin: The point relative to the canvas.
-    public convenience init(width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) {
-        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
-            length: width * height * 4 * MemoryLayout<UInt8>.stride,
-            options: .storageModeShared
-        )!
-        
-        self.init(buffer: buffer, origin: origin, width: width, height: height, colorSpace: colorSpace)
-    }
-    
-    /// Initialize the container filled with the given color.
-    ///
-    /// The image will be converted into a 8 bits-per-component, with premultiplied last alpha.
-    ///
-    /// - Parameters:
-    ///   - origin: The point relative to the canvas.
-    public convenience init(fill: Color, frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) throws {
-        let width = Int(frame.width)
-        let height = Int(frame.height)
-        
-        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
-            length: width * height * 4 * MemoryLayout<UInt8>.stride,
-            options: .storageModeShared
-        )!
-        buffer.label = "Layer.buffer<(\(width), \(height), 4)>(origin: \(#function))"
-        
-        self.init(buffer: buffer, frame: frame, colorSpace: colorSpace)
-        let mask = try Mask(repeating: true, width: width, height: height)
-        try self.fill(color: fill, selection: mask)
-    }
-    
-    /// Initialize the container filled with clear
-    ///
-    /// - Parameters:
-    ///   - origin: The point relative to the canvas.
-    public convenience init(frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) {
-        let width = Int(frame.width)
-        let height = Int(frame.height)
-        
-        let buffer = CanvasKitConfiguration.computeDevice.makeBuffer(
-            length: width * height * 4 * MemoryLayout<UInt8>.stride,
-            options: .storageModeShared
-        )!
-        buffer.label = "Layer.buffer<(\(width), \(height), 4)>(origin: \(#function))"
-        
-        self.init(buffer: buffer, frame: frame, colorSpace: colorSpace)
-    }
+#endif
     
     @MainActor
-    public convenience init(_ view: some View, size: CGSize) {
+    public convenience init(_ view: some View, size: CGSize, context: MetalContext) throws {
         let renderer = ImageRenderer(content: view)
         renderer.proposedSize = .init(size)
-        self.init(renderer.cgImage!)
+        try self.init(renderer.cgImage!, context: context)
     }
     
 }

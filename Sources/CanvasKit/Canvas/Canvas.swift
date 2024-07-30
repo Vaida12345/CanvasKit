@@ -5,6 +5,7 @@
 //  Created by Vaida on 7/5/24.
 //
 
+#if false
 import CoreGraphics
 import MetalManager
 import Metal
@@ -53,7 +54,9 @@ public final class Canvas: LayerProtocol {
         let result = try manager.setEmptyBuffer(count: Int(size.width) * Int(size.height) * 4, type: UInt8.self)
         result.label = "Canvas.Buffer<\(Int(size.width)), \(Int(size.height)), 4>(origin: Canvas.makeBuffer)"
         
+        print("canvas finalize")
         try manager.perform(width: Int(size.width), height: Int(size.height))
+        print("canvas finalize: done")
         
         return result
     }
@@ -104,3 +107,4 @@ public final class Canvas: LayerProtocol {
     }
     
 }
+#endif

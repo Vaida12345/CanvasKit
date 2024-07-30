@@ -13,42 +13,36 @@ import Metal
 /// An image layer, the direct container to an image buffer.
 public final class Layer: LayerProtocol {
     
-    internal private(set) var buffer: any MTLBuffer
+    internal private(set) var texture: any MTLTexture
     
     /// The frame relative to the Canvas.
     ///
     /// - Invariant: the origin is relative to the canvas, which means this value may be modified when the parent canvas changes in size.
     ///
     /// - Invariant: this implementation does not use `CoreGraphics` for rendering, hence the origin was chosen to be top-left corner.
-    public private(set) var frame: CGRect
+    public private(set) var origin: CGPoint
+    
+    let context: MetalContext?
     
     let colorSpace: CGColorSpace
     
     
     public var width: Int {
-        Int(self.frame.width)
+        self.texture.width
     }
     
     public var height: Int {
-        Int(self.frame.height)
-    }
-    
-    public var origin: CGPoint {
-        get {
-            self.frame.origin
-        }
-        set {
-            self.frame.origin = newValue
-        }
+        self.texture.height
     }
     
     public var size: CGSize {
-        self.frame.size
+        CGSize(width: self.texture.width, height: self.texture.height)
     }
     
     
     public func makeContext() -> CGContext {
-        CGContext(data: self.buffer.contents(), width: Int(self.frame.width), height: Int(self.frame.height), bitsPerComponent: 8, bytesPerRow: 4 * Int(self.frame.width), space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        let data = self.texture.makeBuffer()
+        return CGContext(data: data.baseAddress!, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 4 * width, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     }
     
     /// Returns the color at the given index.
@@ -58,9 +52,9 @@ public final class Layer: LayerProtocol {
     ///
     /// - Important: This is a relatively heavy operation.
     func color(at index: Index) -> Color {
-        let index = Int(self.frame.width) * index.y + index.x
+        let index = width * index.y + index.x
         
-        let buffer = UnsafeMutableBufferPointer(start: self.buffer.contents().assumingMemoryBound(to: UInt8.self), count: self.width * self.height * 4)
+        let buffer = self.texture.makeBuffer()
         
         let startIndex = index * 4
         
@@ -71,32 +65,24 @@ public final class Layer: LayerProtocol {
         )
     }
     
-    func set(buffer: any MTLBuffer, frame: CGRect) {
-        assert(Int(frame.width) * Int(frame.height) * 4 * MemoryLayout<UInt8>.stride == buffer.length)
-        
-        self.buffer = buffer
-        self.frame = frame
+    func set(texture: any MTLTexture, origin: CGPoint) {
+        self.texture = texture
+        self.origin = origin
     }
     
-    func set(buffer: any MTLBuffer, width: Int, height: Int, origin: CGPoint) {
-        self.set(
-            buffer: buffer,
-            frame: CGRect(origin: origin, size: CGSize(width: width, height: height))
-        )
+    public func move(to point: CGPoint) {
+        self.origin = point
     }
     
-    public init(buffer: any MTLBuffer, origin: CGPoint = .zero, width: Int, height: Int, colorSpace: CGColorSpace) {
-        assert(width * height * 4 * MemoryLayout<UInt8>.stride == buffer.length)
-        self.buffer = buffer
-        self.frame = CGRect(origin: origin, size: CGSize(width: width, height: height))
+    public init(texture: any MTLTexture, origin: CGPoint = .zero, colorSpace: CGColorSpace, context: MetalContext) {
+        self.texture = texture
+        self.origin = origin
         self.colorSpace = colorSpace
+        self.context = context
     }
     
-    public init(buffer: any MTLBuffer, frame: CGRect, colorSpace: CGColorSpace) {
-        assert(Int(frame.width) * Int(frame.height) * 4 * MemoryLayout<UInt8>.stride == buffer.length)
-        self.buffer = buffer
-        self.frame = frame
-        self.colorSpace = colorSpace
+    public convenience init(texture: any MTLTexture, frame: CGRect, colorSpace: CGColorSpace, context: MetalContext) {
+        self.init(texture: texture, origin: frame.origin, colorSpace: colorSpace, context: context)
     }
     
 }

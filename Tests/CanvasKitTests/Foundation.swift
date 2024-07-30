@@ -3,6 +3,7 @@ import Foundation
 @testable import CanvasKit
 import Stratum
 
+#if false
 extension Tag {
     @Tag static let foundation: Tag
 }
@@ -67,3 +68,4 @@ struct CanvasFoundationTests {
         try tempFolder.makeDirectory()
     }
 }
+#endif

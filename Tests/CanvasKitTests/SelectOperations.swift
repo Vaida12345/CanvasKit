@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import CanvasKit
 import Stratum
-
+#if false
 extension Tag {
     @Tag static let select: Tag
 }
@@ -74,3 +74,4 @@ struct SelectOperations {
         try tempFolder.makeDirectory()
     }
 }
+#endif

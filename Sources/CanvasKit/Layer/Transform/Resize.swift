@@ -5,6 +5,7 @@
 //  Created by Vaida on 7/7/24.
 //
 
+#if false
 import CoreGraphics
 import MetalManager
 
@@ -41,3 +42,4 @@ public extension Transformation where Self == ResizeTransformation {
     }
     
 }
+#endif
