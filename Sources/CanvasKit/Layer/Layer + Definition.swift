@@ -46,26 +46,6 @@ public final class Layer: LayerProtocol {
         return CGContext(data: data.baseAddress!, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 4 * width, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     }
     
-    /// Returns the color at the given index.
-    ///
-    /// - Parameters:
-    ///   - index: The index of the required color.
-    ///
-    /// - Important: This is a relatively heavy operation.
-    func color(at index: Index) -> Color {
-        let index = width * index.y + index.x
-        
-        let buffer = self.texture.makeBuffer()
-        
-        let startIndex = index * 4
-        
-        return Color(red:   buffer[startIndex],
-                     green: buffer[startIndex + 1],
-                     blue:  buffer[startIndex + 2],
-                     alpha: buffer[startIndex + 3]
-        )
-    }
-    
     func set(texture: any MTLTexture, origin: CGPoint) {
         self.texture = texture
         self.origin = origin
