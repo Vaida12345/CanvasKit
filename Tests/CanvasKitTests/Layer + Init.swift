@@ -21,11 +21,37 @@ extension Tag {
 
 
 @Suite(.tags(.layer, .`init`))
-struct Layer_init {
+final class Layer_init: TestingSuit {
+    
+    override func folder() -> String {
+        "Layer"
+    }
     
     @Test
     func init_from_image() async throws {
-        let source = 
+        let source = makeSampleCGImage()
+        let context = try await MetalContext()
+        
+        let layer = try Layer(source, context: context)
+        let rendered = try await layer.render()
+        
+        assertCGImagesEqual(source, rendered)
+        
+        let second = try Layer(source, center: .zero, context: context)
+        try await assertCGImagesEqual(second.render(), source)
+        #expect(second.origin == -CGPoint(x: source.width / 2, y: source.height / 2))
+    }
+    
+    @Test
+    func init_empty() async throws {
+        let context = try await MetalContext()
+        let layer = Layer(width: 1000, height: 1000, context: context)
+        
+        try await writeAndCompare(
+            layer: layer,
+            folder: "layer_init",
+            name: "layer_init_empty.png"
+        )
     }
     
 }

@@ -23,7 +23,7 @@ public final class Layer: LayerProtocol {
     /// - Invariant: this implementation does not use `CoreGraphics` for rendering, hence the origin was chosen to be top-left corner.
     public private(set) var origin: CGPoint
     
-    let context: MetalContext?
+    let context: MetalContext
     
     let colorSpace: CGColorSpace
     
@@ -41,8 +41,10 @@ public final class Layer: LayerProtocol {
     }
     
     
-    public func makeContext() -> CGContext {
+    public func makeContext() async throws -> CGContext {
+        try await self.context.synchronize()
         let data = self.texture.makeBuffer()
+        
         return CGContext(data: data.baseAddress!, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 4 * width, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     }
     

@@ -20,9 +20,11 @@ extension Tag {
 
 
 @Suite(.tags(.mask))
-struct MaskSuit {
+final class MaskSuit: TestingSuit {
     
-    let tempFolder: FinderItem
+    override func folder() -> String {
+        "Mask"
+    }
     
     @Test func mask_init_fill() async throws {
         try await writeAndCompare(
@@ -94,18 +96,5 @@ struct MaskSuit {
         )
     }
     
-    
-    private func writeAndCompare(layer: some LayerProtocol, folder: String, name: String = "result.png") async throws {
-        let result = tempFolder.appending(path: folder + "/" + name)
-        try result.generateDirectory()
-        try await layer.render().write(to: result)
-        try #require(result.contentsEqual(to: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/Mask/\(folder)/\(name)"), "Check \"\(folder + "/" + result.name)\" in the Temp folder.")
-        try result.remove()
-    }
-    
-    init() throws {
-        self.tempFolder = FinderItem(at: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/Temp/Mask")
-        try tempFolder.makeDirectory()
-    }
 }
 
