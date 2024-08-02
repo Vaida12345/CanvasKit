@@ -204,7 +204,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         let descriptor = MTLTextureDescriptor()
         descriptor.height = height
         descriptor.width = width
-        descriptor.pixelFormat = .r8Uint
+        descriptor.pixelFormat = .r8Unorm
         descriptor.usage = .shaderReadWrite
         descriptor.storageMode = .shared
         
@@ -216,12 +216,12 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - uint8: The mask value. A value of zero would indicate not selected, while any none-zero value would indicate the given pixel is selected.
-    public convenience init(repeating uint8: UInt8 = 0, width: Int, height: Int, context: MetalContext) async throws {
+    public convenience init(repeating float: Float = 0, width: Int, height: Int, context: MetalContext) async throws {
         let texture = Mask.makeTexture(width: width, height: height)
         
         try await MetalFunction(name: "mask_fill_with", bundle: .module)
             .argument(texture: texture)
-            .argument(bytes: UInt32(uint8))
+            .argument(bytes: float)
             .dispatch(to: context.addJob(), width: width, height: height)
         
         texture.label = "Mask.Texture<(\(width), \(height))>(origin: \(#function))"

@@ -46,4 +46,39 @@ final class Layer_Foundation: TestingSuit {
         #expect(try await layer.isBitwiseEqual(to: copy))
     }
     
+    @Test
+    func layer_expand() async throws {
+        let context = try await MetalContext()
+        let layer = try Layer(makeSampleCGImage(), context: context)
+        
+        let expandedMask = try await layer.expanding(to: CGRect(origin: -CGPoint(x: 10, y: 10), size: .square(50)))
+        
+        try await writeAndCompare(
+            layer: expandedMask,
+            folder: "layer_expand",
+            name: "expanded_layer_expand.png"
+        )
+        
+        try await writeAndCompare(
+            layer: expandedMask.cropping(to: CGRect(origin: CGPoint(x: 5, y: 5), size: .square(20))),
+            folder: "layer_expand",
+            name: "expanded_layer_shrink.png"
+        )
+    }
+    
+    @Test
+    func layer_invert() async throws {
+        let context = try await MetalContext()
+        let layer = try Layer(makeSampleCGImage(), context: context)
+        
+        try await layer.invert()
+        
+        try await writeAndCompare(
+            layer: layer,
+            folder: "layer_invert",
+            name: "inverted_layer.png"
+        )
+        
+    }
+    
 }

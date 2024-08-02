@@ -85,4 +85,83 @@ public extension Layer {
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
     }
     
+    /// Expand the Layer.
+    ///
+    /// The `origin` is the point relative to the original `(0, 0)`.
+    ///
+    /// The current layer would be drawn on the new layer using this computation:
+    /// ```swift
+    /// newPixel.position = oldPixel.position - rect.origin
+    /// ```
+    ///
+    /// This is intuitive, for example
+    ///
+    /// If you would like it to stay at the center of the canvas, use
+    ///
+    /// ``` swift
+    /// CGRect(center: self.frame.center, size: size)
+    /// ```
+    ///
+    /// - If `size > frame.size`, the origin is a negative number, the new pixels are mapped to a higher index.
+    /// - If `size < frame.size`, the origin is a positive number, the new pixels are mapped to a lower index.
+    ///
+    /// To explicitly state the origin on the *new* canvas, use
+    ///
+    /// ```swift
+    /// CGRect(origin: -origin_on_new_canvas, size: size)
+    /// ```
+    func expanding(to rect: CGRect) async throws -> Layer {
+        let width = Int(rect.width)
+        let height = Int(rect.height)
+        
+        let newLayer = Layer(width: width, height: height, origin: origin, colorSpace: colorSpace, context: context)
+        newLayer.texture.label = "Layer.Texture<(\(width), \(height))>(expandOf: \(self.texture.label ?? "(unknown)"), by: \(rect))"
+        
+        try await MetalFunction(name: "layer_expand", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newLayer.texture)
+            .argument(bytes: DiscreteRect(rect))
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+        
+        return newLayer
+    }
+    
+    /// Crop the Layer.
+    ///
+    /// - Note: This does exactly the same as ``expanding(to:)``
+    ///
+    /// The `origin` is the point relative to the original `(0, 0)`.
+    ///
+    /// The current layer would be drawn on the new layer using this computation:
+    /// ```swift
+    /// newPixel.position = oldPixel.position - rect.origin
+    /// ```
+    ///
+    /// This is intuitive, for example
+    ///
+    /// If you would like it to stay at the center of the canvas, use
+    ///
+    /// ``` swift
+    /// CGRect(center: self.frame.center, size: size)
+    /// ```
+    ///
+    /// - If `size > frame.size`, the origin is a negative number, the new pixels are mapped to a higher index.
+    /// - If `size < frame.size`, the origin is a positive number, the new pixels are mapped to a lower index.
+    ///
+    /// To explicitly state the origin on the *new* canvas, use
+    ///
+    /// ```swift
+    /// CGRect(origin: -origin_on_new_canvas, size: size)
+    /// ```
+    func cropping(to rect: CGRect) async throws -> Layer {
+        try await self.expanding(to: rect)
+    }
+    
+    /// Invert the layer.
+    func invert() async throws {
+        try await MetalFunction(name: "layer_invert", bundle: .module)
+            .argument(texture: self.texture)
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+    }
+    
 }
