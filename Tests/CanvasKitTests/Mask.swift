@@ -71,7 +71,7 @@ final class MaskSuit: TestingSuit {
         let mask = try await Mask(width: 10, height: 10, selecting: selection, context: MetalContext())
         let boundary = try await mask.boundary()
         
-        try await #expect(boundary.makeCGRect() == selection)
+        #expect(boundary == selection)
     }
     
     @Test func mask_inverse() async throws {
@@ -93,6 +93,20 @@ final class MaskSuit: TestingSuit {
             layer: newMask,
             folder: "mask_expand",
             name: "expanded_mask.png"
+        )
+        
+        let expandedMask = try await mask.expanding(to: CGRect(origin: -CGPoint(x: 50, y: 50), size: .square(200)))
+        
+        try await writeAndCompare(
+            layer: expandedMask,
+            folder: "mask_expand",
+            name: "expanded_mask_expand.png"
+        )
+        
+        try await writeAndCompare(
+            layer: expandedMask.cropping(to: CGRect(origin: CGPoint(x: 25, y: 25), size: .square(100))),
+            folder: "mask_expand",
+            name: "expanded_mask_shrink.png"
         )
     }
     

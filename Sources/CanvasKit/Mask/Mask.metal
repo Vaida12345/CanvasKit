@@ -14,8 +14,8 @@ kernel void mask_fill_with_selection(texture2d<uint, access::write> texture,
                                      constant DiscreteRect& rect,
                                      uint2 position [[thread_position_in_grid]]) {
     // Calculate the bounds of the rectangle
-    uint2 rectMin = rect.origin;
-    uint2 rectMax = rect.origin + rect.size;
+    int2 rectMin = rect.origin;
+    int2 rectMax = rect.origin + rect.size;
     
     // Check if the current position is within the rectangle
     if (position.x >= rectMin.x && position.x < rectMax.x &&
@@ -69,11 +69,11 @@ kernel void mask_expand(texture2d<uint, access::read>  input  [[texture(0)]],
                         texture2d<uint, access::write> output [[texture(1)]],
                         constant DiscreteRect& rect,
                         uint2 position [[thread_position_in_grid]]) {
-    uint2 dest = position - rect.origin;
+    int2 dest = int2(position) - rect.origin;
     
     if (dest.x < 0 || dest.y < 0 || dest.x >= rect.size.x || dest.y >= rect.size.y)
         return;
     
     uint pixelValue = input.read(position).r;
-    output.write(pixelValue, dest);
+    output.write(pixelValue, uint2(dest));
 }

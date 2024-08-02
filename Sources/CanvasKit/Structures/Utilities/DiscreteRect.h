@@ -3,8 +3,8 @@
 #define DISCRETERECT_H
 
 struct DiscreteRect {
-    uint2 origin;
-    uint2 size;
+    int2 origin;
+    int2 size;
 };
 
 #endif // DISCRETERECT_H

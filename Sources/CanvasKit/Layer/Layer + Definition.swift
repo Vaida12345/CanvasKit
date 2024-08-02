@@ -14,7 +14,7 @@ import MetalManager
 /// An image layer, the direct container to an image buffer.
 public final class Layer: LayerProtocol {
     
-    internal private(set) var texture: any MTLTexture
+    public private(set) var texture: any MTLTexture
     
     /// The frame relative to the Canvas.
     ///
@@ -27,11 +27,12 @@ public final class Layer: LayerProtocol {
     
     let colorSpace: CGColorSpace
     
-    
+    /// The width of the texture.
     public var width: Int {
-        self.texture.width
+        self.texture.width // surprisingly, this is only. As the size of texture cannot be modified. This would always reflect the actual size of the size. And it's the same for `height`.
     }
     
+    /// The height of the texture.
     public var height: Int {
         self.texture.height
     }
@@ -43,7 +44,7 @@ public final class Layer: LayerProtocol {
     
     public func makeContext() async throws -> CGContext {
         try await self.context.synchronize()
-        let data = self.texture.makeBuffer()
+        let data = self.texture.makeBuffer(channelsCount: 4)
         
         return CGContext(data: data.baseAddress!, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 4 * width, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     }

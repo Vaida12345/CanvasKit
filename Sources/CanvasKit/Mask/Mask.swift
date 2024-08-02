@@ -17,17 +17,20 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
     public let texture: any MTLTexture
     
-    var width: Int {
+    /// The width of the texture.
+    public var width: Int {
         self.texture.width
     }
     
-    var height: Int {
+    /// The height of the texture.
+    public var height: Int {
         self.texture.height
     }
     
     let context: MetalContext
     
-    var size: CGSize {
+    /// The size of the texture.
+    public var size: CGSize {
         CGSize(width: width, height: height)
     }
     
@@ -49,7 +52,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     }
     
     
-    private var _boundary: Boundary? = nil
+    private var _boundary: CGRect? = nil
     
     /// The boundary of the mask.
     ///
@@ -61,7 +64,9 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     /// 0 0 0 0
     /// ```
     /// the boundary is `CGRect(x: 1, y: 1, width: 2, height: 2)`.
-    public func boundary() async throws -> Boundary {
+    ///
+    /// - Complexity: **Calling this method would synchronize the context.** One could have chosen to return a MetalDependentState, and calculate the rect when required. But that would not make any differences. The return boundary is mainly used by the CPU to compute the actual size of the buffer, and create new buffers out of it. One way or another, the CPU must know the size of the boundary to allocate the textures.
+    public func boundary() async throws -> CGRect {
         if let _boundary { return _boundary }
         
         nonisolated(unsafe)
@@ -75,7 +80,18 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
             .argument(buffer: columns)
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
         
-        return Boundary(context: self.context, rows: rows, columns: columns, rowsCount: self.height, columnsCount: self.width)
+        try await context.synchronize()
+        
+        let _rows = UnsafeMutableBufferPointer(start: rows.contents().assumingMemoryBound(to: Bool.self), count: self.height)
+        let _columns = UnsafeMutableBufferPointer(start: columns.contents().assumingMemoryBound(to: Bool.self), count: self.width)
+        
+        let x_start = _columns.firstIndex(of: true) ?? 0
+        let x_end   = _columns.lastIndex(of: true)  ?? 0
+        
+        let y_start = _rows.firstIndex(of: true) ?? 0
+        let y_end   = _rows.lastIndex(of: true)  ?? 0
+        
+        return CGRect(x: x_start, y: y_start, width: x_end - x_start + 1, height: y_end - y_start + 1)
     }
     
     
@@ -131,6 +147,38 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         
         return Mask(texture: newTexture, context: self.context)
     }
+    
+    /// Crop the Mask.
+    ///
+    /// - Note: This does exactly the same as ``expanding(to:)``
+    ///
+    /// The `origin` is the point relative to the original `(0, 0)`.
+    ///
+    /// The current layer would be drawn on the new layer using this computation:
+    /// ```swift
+    /// newPixel.position = oldPixel.position - rect.origin
+    /// ```
+    ///
+    /// This is intuitive, for example
+    ///
+    /// If you would like it to stay at the center of the canvas, use
+    ///
+    /// ``` swift
+    /// CGRect(center: self.frame.center, size: size)
+    /// ```
+    ///
+    /// - If `size > frame.size`, the origin is a negative number, the new pixels are mapped to a higher index.
+    /// - If `size < frame.size`, the origin is a positive number, the new pixels are mapped to a lower index.
+    ///
+    /// To explicitly state the origin on the *new* canvas, use
+    ///
+    /// ```swift
+    /// CGRect(origin: -origin_on_new_canvas, size: size)
+    /// ```
+    public func cropping(to rect: CGRect) async throws -> Mask {
+        try await self.expanding(to: rect)
+    }
+    
     
     public func makeContext() async throws -> CGContext {
         try await self.context.synchronize()
