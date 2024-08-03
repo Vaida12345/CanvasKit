@@ -8,6 +8,7 @@
 import Foundation
 import MetalManager
 import Stratum
+import SwiftUI
 
 
 public extension Layer {
@@ -237,6 +238,30 @@ public extension Layer {
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
         
         return newLayer
+    }
+    
+    /// Returns a resized layer using lanczos resample.
+    ///
+    /// - Note: By returning a new layer, the current layer is unmodified.
+    func resized(to size: CGSize) async throws -> Layer {
+        let newLayer = Layer(width: Int(size.width), height: Int(size.height), origin: self.origin, colorSpace: self.colorSpace, context: self.context)
+        newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(resizeOf: \(self.texture.label ?? "(unknown)"))"
+        
+        try await MetalFunction(name: "lanczosResample", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newLayer.texture)
+            .dispatch(to: self.context.addJob(), width: Int(size.width), height: Int(size.height))
+        
+        return newLayer
+    }
+    
+    func aspectRatioResize(_ contentMode: ContentMode, in rect: CGRect) async throws -> Layer {
+        let size = self.size.aspectRatio(contentMode, in: rect.size)
+        let origin = CGRect(center: rect.center, size: size).origin
+        
+        let layer = try await self.resized(to: size)
+        layer.move(to: origin)
+        return layer
     }
     
 }

@@ -120,4 +120,26 @@ final class Layer_Foundation: TestingSuit {
         )
     }
     
+    @Test
+    func layer_resize() async throws {
+        let context = try await MetalContext()
+        let layer = try Layer(makeSampleCGImage(), context: context)
+        try await layer.fill(.white.opacity(nil))
+        
+        let resize_large = try await layer.resized(to: CGSize(width: 400, height: 200))
+        let resize_small = try await layer.resized(to: CGSize(width: 20, height: 20))
+        
+        try await writeAndCompare(
+            layer: resize_large,
+            folder: "layer_resize",
+            name: "resize_large.png"
+        )
+        
+        try await writeAndCompare(
+            layer: resize_small,
+            folder: "layer_resize",
+            name: "resize_small.png"
+        )
+    }
+    
 }

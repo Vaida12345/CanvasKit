@@ -125,3 +125,44 @@ kernel void layer_convolution(texture2d<float, access::read> input,
     
     output.write(sum, position);
 }
+
+
+// Define a utility function to calculate the Lanczos kernel weight.
+float lanczosWeight(float x, float lanczos_kernel) {
+    if (x == 0.0) return 1.0;
+    if (abs(x) >= lanczos_kernel) return 0.0;
+    float pi_x = 3.14159265358979323846 * x;
+    return lanczos_kernel * sin(pi_x) * sin(pi_x / float(lanczos_kernel)) / (pi_x * pi_x);
+}
+
+
+kernel void lanczosResample(texture2d<float, access::read>  input,
+                            texture2d<float, access::write> output,
+                            uint2 output_position [[thread_position_in_grid]]) {
+    float lanczos_kernel = 2; // 2 or 3
+    
+    int2 input_size  = int2(input.get_width(),  input.get_height());
+    int2 output_size = int2(output.get_width(), output.get_height());
+    
+    float2 input_position_float = float2(output_position) * float2(input_size) / float2(output_size);
+    int2 input_position = int2(input_position_float);
+    float4 totalColor = float4(0);
+    float totalWeight = 0;
+    
+    for(int j = -lanczos_kernel; j < lanczos_kernel; j++) {
+        for(int i = -lanczos_kernel; i < lanczos_kernel; i++) {
+            float weight = lanczosWeight(float(i) - (input_position_float.x - float(input_position.x)), lanczos_kernel)
+                         * lanczosWeight(float(j) - (input_position_float.y - float(input_position.y)), lanczos_kernel);
+            int2 delta = int2(i, j);
+            int2 pixel_position = min(max(input_position + delta, int2(0)), input_size - 1);
+            
+            float4 color = input.read(uint2(pixel_position));
+            totalColor += color * weight;
+            
+            totalWeight += weight;
+        }
+    }
+    
+    float4 output_color = totalColor / totalWeight;
+    output.write(output_color, output_position);
+}

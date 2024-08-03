@@ -27,7 +27,6 @@ let package = Package(
             exclude: [
                 "Canvas",
                 "Layer/Selection",
-                "Layer/Transform",
             ]
         ),
         .testTarget(
