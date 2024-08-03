@@ -105,10 +105,12 @@ public extension Layer {
     /// Fill the area masked by `mask` by the `color`.
     ///
     /// If a channel is `nil`, that channel is unmodified.
-    func fill(_ color: PartialColor, mask: Mask) async throws {
+    func fill(_ color: PartialColor, selection: Mask) async throws {
+        precondition(selection.size == self.size, "Attempting to apply a mask to an layer of different size. Tip: You can use `Mask.expanding(to:)` to expand or shrink the mask.")
+        
         try await MetalFunction(name: "layer_fill_with_mask", bundle: .module)
             .argument(texture: self.texture)
-            .argument(texture: mask.texture)
+            .argument(texture: selection.texture)
             .argument(bytes: color)
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
     }

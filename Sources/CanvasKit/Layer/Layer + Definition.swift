@@ -24,7 +24,7 @@ public final class Layer: LayerProtocol, @unchecked Sendable {
     /// - Invariant: the origin is relative to the canvas, which means this value may be modified when the parent canvas changes in size.
     ///
     /// - Invariant: this implementation does not use `CoreGraphics` for rendering, hence the origin was chosen to be top-left corner.
-    public private(set) var origin: CGPoint
+    public var origin: CGPoint
     
     public let context: MetalContext
     

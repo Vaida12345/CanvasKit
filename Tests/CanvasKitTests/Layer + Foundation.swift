@@ -53,7 +53,7 @@ final class Layer_Foundation: TestingSuit {
         let layer = try Layer(makeSampleCGImage(), context: context)
         let mask = try await Mask(width: layer.width, height: layer.height, selecting: CGRect(x: 2, y: 2, width: 10, height: 10), context: context)
         let copy = try await layer.copy(selection: mask)
-        try await layer.fill(.clear, mask: mask.invert())
+        try await layer.fill(.clear, selection: mask.invert())
         
         #expect(try await layer.isBitwiseEqual(to: copy))
     }
