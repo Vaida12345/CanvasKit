@@ -5,25 +5,40 @@
 //  Created by Vaida on 7/5/24.
 //
 
+import Metal
+import MetalManager
 import CoreGraphics
 
 
 /// The protocol that all layers and Canvas conforms to.
 public protocol LayerProtocol {
     
-    /// Returns the context which could represent the layer.
+    /// The underlying texture.
     ///
-    /// - Important: making the context involves rendering and/or converting buffer from the GPUs, hence is a heavy operation.
-    func makeContext() async throws -> CGContext
+    /// Please note that this texture could be un-synced, to get a synchronized texture for your CPU, which is rare, you can call ``makeTexture()``.
+    var texture: any MTLTexture { get }
+    
+    /// The context in which operations on the layer would run.
+    var context: MetalContext { get }
+    
+    /// Returns the underlying texture.
+    ///
+    /// - Important: This will synchronize the context. If you do not want to synchronize, use
+    func makeTexture() async throws -> any MTLTexture
+    
+    /// Renders the layer as CGImage.
+    ///
+    /// - Important: This will synchronize the context.
+    func render() async throws -> CGImage
     
 }
 
 
-public extension LayerProtocol {
+extension LayerProtocol {
     
-    /// Render as a CGImage.
-    func render() async throws -> CGImage {
-        try await self.makeContext().makeImage()!
+    public func makeTexture() async throws -> any MTLTexture {
+        try await self.context.synchronize()
+        return self.texture
     }
     
 }

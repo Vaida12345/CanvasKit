@@ -80,6 +80,16 @@ class TestingSuit {
         try result.remove()
     }
     
+    func writeAndCompare(texture: any MTLTexture, folder: String, name: String = "result.png") async throws {
+        let result = try tempFolder().appending(path: folder + "/" + name)
+        try result.generateDirectory()
+        
+        try texture.makeCGImage()!.write(to: result)
+        
+        try #require(result.contentsEqual(to: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/\(self.folder())/\(folder)/\(name)"), "Check \"\(folder + "/" + result.name)\" in the Temp folder.")
+        try result.remove()
+    }
+    
     init() async {
         await MetalManager.prepareCache()
     }

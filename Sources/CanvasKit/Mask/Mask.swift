@@ -30,7 +30,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         self.texture.height
     }
     
-    let context: MetalContext
+    public let context: MetalContext
     
     /// The size of the texture.
     public var size: CGSize {
@@ -182,23 +182,8 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await self.expanding(to: rect)
     }
     
-    
-    public func makeContext() async throws -> CGContext {
-        let logger = Logger(subsystem: "CanvasKit", category: "Layer")
-        let date = Date()
-        try await self.context.synchronize()
-        logger.info("Layer.makeContext, synchronize took \(date.distanceToNow())")
-        let contents = self.texture.makeBuffer(channelsCount: 1)
-        
-        return CGContext(
-            data: contents.baseAddress!,
-            width: self.width,
-            height: self.height,
-            bitsPerComponent: 8,
-            bytesPerRow: self.width * 1,
-            space: CGColorSpaceCreateDeviceGray(),
-            bitmapInfo: CGImageAlphaInfo.none.rawValue
-        )!
+    public func render() async throws -> CGImage {
+        try await self.makeTexture().makeCGImage(channelsCount: 1, colorSpace: CGColorSpaceCreateDeviceGray(), bitmapInfo: .none)!
     }
     
     init(texture: any MTLTexture, context: MetalContext) {

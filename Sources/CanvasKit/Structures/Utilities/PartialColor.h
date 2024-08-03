@@ -4,7 +4,7 @@
 
 struct PartialColor {
     float4 components;
-    uchar4 presence;
+    uint4 presence;
 };
 
 #endif // PartialColor_H
