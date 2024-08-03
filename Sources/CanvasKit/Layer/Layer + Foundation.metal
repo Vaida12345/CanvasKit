@@ -98,6 +98,7 @@ kernel void layer_convolution(texture2d<float, access::read> input,
                               texture2d<float, access::write> output,
                               device const float* _kernel,
                               constant int2& size,
+                              constant uchar& layerIndexes,
                               uint2 position [[thread_position_in_grid]]) {
     float4 sum = float4(0);
     
@@ -121,6 +122,12 @@ kernel void layer_convolution(texture2d<float, access::read> input,
             float4 color = input.read(uint2(_position));
             sum += color * _kernel[j * size[0] + i];
         }
+    }
+    
+    float4 originalColor = input.read(position);
+    for (int z = 0; z < 4; z ++) {
+        if ((layerIndexes & 1 << z) == 0)
+            sum[z] = originalColor[z];
     }
     
     output.write(sum, position);

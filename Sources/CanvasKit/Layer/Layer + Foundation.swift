@@ -250,7 +250,7 @@ public extension Layer {
     /// ```
     ///
     /// The sum of the matrix is one, which would indicate the image received no gain.
-    func convolution(kernel: Matrix<Float>) async throws -> Layer {
+    func convolution(kernel: Matrix<Float>, components: Components = .all) async throws -> Layer {
         let newLayer = Layer(width: self.width, height: self.height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
         newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(convOf: \(self.texture.label ?? "(unknown)"))"
         
@@ -261,6 +261,7 @@ public extension Layer {
             .argument(texture: newLayer.texture)
             .argument(buffer: _kernel)
             .argument(bytes: SIMD2<Int32>(Int32(kernel.width), Int32(kernel.height)))
+            .argument(bytes: components)
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
         
         return newLayer
