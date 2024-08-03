@@ -9,9 +9,12 @@ import Metal
 import Foundation
 import MetalManager
 import CoreGraphics
+import OSLog
 
 
 /// An immutable mask.
+///
+/// This container is tightly bound to the underlying texture. Its texture is allocated on creation, and the texture, including its content, cannot be changed.
 public final class Mask: LayerProtocol, @unchecked Sendable {
     
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
@@ -181,7 +184,10 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     
     
     public func makeContext() async throws -> CGContext {
+        let logger = Logger(subsystem: "CanvasKit", category: "Layer")
+        let date = Date()
         try await self.context.synchronize()
+        logger.info("Layer.makeContext, synchronize took \(date.distanceToNow())")
         let contents = self.texture.makeBuffer(channelsCount: 1)
         
         return CGContext(

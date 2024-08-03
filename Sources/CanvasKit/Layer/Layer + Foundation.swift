@@ -7,6 +7,7 @@
 
 import Foundation
 import MetalManager
+import Stratum
 
 
 public extension Layer {
@@ -78,9 +79,19 @@ public extension Layer {
     ///
     /// If a channel is `nil`, that channel is unmodified.
     func fill(_ color: PartialColor, mask: Mask) async throws {
-        try await MetalFunction(name: "layer_fill", bundle: .module)
+        try await MetalFunction(name: "layer_fill_with_mask", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: mask.texture)
+            .argument(bytes: color)
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+    }
+    
+    /// Fill the area masked by `mask` by the `color`.
+    ///
+    /// If a channel is `nil`, that channel is unmodified.
+    func fill(_ color: PartialColor) async throws {
+        try await MetalFunction(name: "layer_fill", bundle: .module)
+            .argument(texture: self.texture)
             .argument(bytes: color)
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
     }
@@ -162,6 +173,70 @@ public extension Layer {
         try await MetalFunction(name: "layer_invert", bundle: .module)
             .argument(texture: self.texture)
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+    }
+    
+    /// Component-wise subtraction.
+    ///
+    /// This operation does not take the alpha channel into account, only if it is 0 or not. This would perform,
+    ///
+    /// ```c
+    /// if (value[3] != 0) {
+    ///     for (int i = 0; i < 3; i++) {
+    ///         target[i] = target[i] - value[i];
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// - Tip: Due to the nature of such algorithm, subtracting an empty layer is the same as subtracting a black layer.
+    func subtract(_ other: Layer) async throws {
+        precondition(self.size == other.size, "The two layers need to be of equal size to enable subtraction.")
+        
+        try await MetalFunction(name: "layer_subtract", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: other.texture)
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+    }
+    
+    /// Component-wise subtraction.
+    ///
+    /// To read more, see ``subtract(_:)``.
+    static func -= (_ lhs: Layer, _ rhs: Layer) async throws {
+        try await lhs.subtract(rhs)
+    }
+    
+    /// Returns a layer by applying the `kernel` to the image matrix using reflective padding.
+    ///
+    /// - Note: By returning a new layer, the current layer is unmodified.
+    ///
+    /// For example, to apply Gaussian blur, use the kernel of
+    ///
+    /// ```swift
+    /// .convolution(
+    ///     kernel: Matrix([
+    ///         [1/273,  4/273,  7/273,  4/273,  1/273],
+    ///         [4/273, 16/273, 26/273, 16/273,  4/273],
+    ///         [7/273, 26/273, 41/273, 26/273,  7/273],
+    ///         [4/273, 16/273, 26/273, 16/273,  4/273],
+    ///         [1/273,  4/273,  7/273,  4/273,  1/273],
+    ///     ] as [[Float]])
+    /// )
+    /// ```
+    ///
+    /// The sum of the matrix is one, which would indicate the image received no gain.
+    func convolution(kernel: Matrix<Float>) async throws -> Layer {
+        let newLayer = Layer(width: self.width, height: self.height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
+        newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(convOf: \(self.texture.label ?? "(unknown)"))"
+        
+        let _kernel = try MetalManager.computeDevice.makeBuffer(bytes: UnsafeMutableBufferPointer(start: kernel.pointer, count: kernel.count))
+        
+        try await MetalFunction(name: "layer_convolution", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newLayer.texture)
+            .argument(buffer: _kernel)
+            .argument(bytes: SIMD2<Int32>(Int32(kernel.width), Int32(kernel.height)))
+            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+        
+        return newLayer
     }
     
 }

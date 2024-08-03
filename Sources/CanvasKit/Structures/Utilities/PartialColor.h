@@ -3,8 +3,8 @@
 #define PartialColor_H
 
 struct PartialColor {
-    float2 components;
-    uint4 presence;
+    float4 components;
+    uchar4 presence;
 };
 
 #endif // PartialColor_H

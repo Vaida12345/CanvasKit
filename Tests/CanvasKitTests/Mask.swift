@@ -12,6 +12,7 @@ import CanvasKit
 import Stratum
 @testable
 import MetalManager
+import OSLog
 
 
 extension Tag {
@@ -86,16 +87,25 @@ final class MaskSuit: TestingSuit {
     }
     
     @Test func mask_expand() async throws {
-        let mask = try await Mask(repeating: 255, width: 100, height: 100, context: MetalContext())
+        let logger = Logger(subsystem: "CanvasKit", category: "Testing")
+        
+        let context = try await measure("make context") {
+            try await MetalContext()
+        }
+        
+        let date = Date()
+        let mask = try await Mask(repeating: 255, width: 100, height: 100, context: context)
         let newMask = try await mask.expanding(to: CGRect(origin: .zero, size: .square(200)))
+        
+        let expandedMask = try await mask.expanding(to: CGRect(origin: -CGPoint(x: 50, y: 50), size: .square(200)))
+        let shrinkMask = try await expandedMask.cropping(to: CGRect(origin: CGPoint(x: 25, y: 25), size: .square(100)))
+        logger.info("mask_expand, Prepare textures took \(date.distanceToNow())")
         
         try await writeAndCompare(
             layer: newMask,
             folder: "mask_expand",
             name: "expanded_mask.png"
         )
-        
-        let expandedMask = try await mask.expanding(to: CGRect(origin: -CGPoint(x: 50, y: 50), size: .square(200)))
         
         try await writeAndCompare(
             layer: expandedMask,
@@ -104,7 +114,7 @@ final class MaskSuit: TestingSuit {
         )
         
         try await writeAndCompare(
-            layer: expandedMask.cropping(to: CGRect(origin: CGPoint(x: 25, y: 25), size: .square(100))),
+            layer: shrinkMask,
             folder: "mask_expand",
             name: "expanded_mask_shrink.png"
         )

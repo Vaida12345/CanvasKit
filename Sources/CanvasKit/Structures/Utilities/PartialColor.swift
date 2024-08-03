@@ -16,7 +16,7 @@ public struct PartialColor: Equatable, Sendable {
     
     let components: SIMD4<Float>
     
-    let presence: SIMD4<UInt32>
+    let presence: SIMD4<UInt8>
     
     
     public var redComponent: Float? {
@@ -52,19 +52,19 @@ public struct PartialColor: Equatable, Sendable {
     /// Creates the color.
     ///
     /// - Parameters:
-    ///   - alpha: An alpha of `0` indicates transparent, while `255` indicates full color.
+    ///   - alpha: An alpha of `0` indicates transparent, while `1` indicates full color.
     public init(red: Float?, green: Float?, blue: Float?, alpha: Float?) {
         let red_value = red ?? 0
-        let red_presence: UInt32 = red != nil ? 1 : 0
+        let red_presence: UInt8 = red != nil ? 1 : 0
         
         let green_value = green ?? 0
-        let green_presence: UInt32 = green != nil ? 1 : 0
+        let green_presence: UInt8 = green != nil ? 1 : 0
         
         let blue_value = blue ?? 0
-        let blue_presence: UInt32 = blue != nil ? 1 : 0
+        let blue_presence: UInt8 = blue != nil ? 1 : 0
         
         let alpha_value = alpha ?? 0
-        let alpha_presence: UInt32 = alpha != nil ? 1 : 0
+        let alpha_presence: UInt8 = alpha != nil ? 1 : 0
         
         self.components = SIMD4(red_value, green_value, blue_value, alpha_value)
         self.presence = SIMD4(red_presence, green_presence, blue_presence, alpha_presence)

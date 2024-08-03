@@ -10,6 +10,8 @@ import CoreGraphics
 import AppKit
 import Stratum
 import CanvasKit
+import OSLog
+import MetalManager
 
 
 func makeSampleCGImage() -> CGImage {
@@ -52,8 +54,28 @@ class TestingSuit {
     func writeAndCompare(layer: some LayerProtocol, folder: String, name: String = "result.png") async throws {
         let result = try tempFolder().appending(path: folder + "/" + name)
         try result.generateDirectory()
+        
+        let logger = Logger(subsystem: "CanvasKit", category: "Testing")
+        let date = Date()
         try await layer.render().write(to: result)
+        logger.info("TestingSuit.writeAndCompare, render took \(date.distanceToNow())")
+        
         try #require(result.contentsEqual(to: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/\(self.folder())/\(folder)/\(name)"), "Check \"\(folder + "/" + result.name)\" in the Temp folder.")
         try result.remove()
     }
+    
+    init() async {
+        await MetalManager.prepareCache()
+    }
+}
+
+
+func measure<T>(_ title: String, block: () async throws -> T) async throws -> T {
+    let logger = Logger(subsystem: "CanvasKit", category: "Testing")
+    let date = Date()
+    defer {
+        logger.info("\(title), \(date.distanceToNow())")
+    }
+    
+    return try await block()
 }

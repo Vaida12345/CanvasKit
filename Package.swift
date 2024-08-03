@@ -26,8 +26,6 @@ let package = Package(
             dependencies: ["MetalManager", "Stratum"],
             exclude: [
                 "Canvas",
-                "Layer/Operation",
-                "Layer/Operations",
                 "Layer/Selection",
                 "Layer/Transform",
             ]

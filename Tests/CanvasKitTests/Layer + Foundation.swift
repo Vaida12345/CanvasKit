@@ -41,7 +41,7 @@ final class Layer_Foundation: TestingSuit {
         let layer = try Layer(makeSampleCGImage(), context: context)
         let mask = try await Mask(width: layer.width, height: layer.height, selecting: CGRect(x: 2, y: 2, width: 10, height: 10), context: context)
         let copy = try await layer.copy(selection: mask)
-        try await layer.fill(PartialColor(red: 0, green: 0, blue: 0, alpha: 0), mask: mask.invert())
+        try await layer.fill(.clear, mask: mask.invert())
         
         #expect(try await layer.isBitwiseEqual(to: copy))
     }
@@ -78,7 +78,46 @@ final class Layer_Foundation: TestingSuit {
             folder: "layer_invert",
             name: "inverted_layer.png"
         )
+    }
+    
+    @Test
+    func layer_subtract() async throws {
+        let context = try await MetalContext()
+        let layer = try Layer(makeSampleCGImage(), context: context)
+        try await layer.fill(.white.opacity(nil))
         
+        let other = Layer(width: layer.width, height: layer.height, context: context)
+        try await other.fill(.white)
+        
+        try await other -= layer
+        
+        try await writeAndCompare(
+            layer: other,
+            folder: "layer_subtract",
+            name: "layer_subtract.png"
+        )
+    }
+    
+    @Test
+    func layer_conv() async throws {
+        let context = try await MetalContext()
+        let layer = try Layer(makeSampleCGImage(), context: context)
+        try await layer.fill(.white.opacity(nil))
+        
+        let conv_1x1 = try await layer.convolution(kernel: .gaussianBlurKernel(size: 1, distribution: 1))
+        let conv_3x3 = try await layer.convolution(kernel: .gaussianBlurKernel(size: 3, distribution: 3))
+        
+        try await writeAndCompare(
+            layer: conv_1x1,
+            folder: "layer_conv",
+            name: "conv_1x1.png"
+        )
+        
+        try await writeAndCompare(
+            layer: conv_3x3,
+            folder: "layer_conv",
+            name: "conv_3x3.png"
+        )
     }
     
 }
