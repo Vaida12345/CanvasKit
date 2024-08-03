@@ -6,19 +6,17 @@
 //
 
 
-
-@rethrows
 public protocol SelectionCriteria {
     
-    func select(layer: Layer) throws -> Mask
+    func select(layer: Layer) async throws -> Mask
     
 }
 
 
 extension Layer {
     
-    public func select(by criteria: SelectionCriteria = .visible(tolerance: 254)) throws -> Mask {
-        try criteria.select(layer: self)
+    public func select(by criteria: SelectionCriteria = .visible()) async throws -> Mask {
+        try await criteria.select(layer: self)
     }
     
 }

@@ -5,6 +5,7 @@
 //  Created by Vaida on 7/5/24.
 //
 
+import Stratum
 import CoreGraphics
 
 
@@ -17,9 +18,9 @@ import CoreGraphics
 ///   - x: The index of row, ranges in `0..<` ``width``.
 public struct Index {
     
-    let y: Int
+    public let y: Int
     
-    let x: Int
+    public let x: Int
     
     
     /// Creates an index.
@@ -36,8 +37,12 @@ public struct Index {
         self.init(y: y, x: x)
     }
     
+    func flatten(width: Int) -> Int {
+        self.y &* width &+ self.x
+    }
+    
     /// Returns the checked moved index.
-    func move(down: Int, right: Int, width: Int, height: Int) -> Index? {
+    public func move(down: Int, right: Int, width: Int, height: Int) -> Index? {
         let x = self.x &+ right
         let y = self.y &+ down
         
@@ -57,6 +62,19 @@ public struct Index {
             }
         }
         return result
+    }
+    
+    
+    public enum IndexingError: GenericError {
+        case indexOutOfRange
+        
+        public var title: String {
+            "Indexing Error"
+        }
+        
+        public var message: String {
+            "Index out of range."
+        }
     }
     
 }

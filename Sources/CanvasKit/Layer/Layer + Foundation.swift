@@ -13,6 +13,32 @@ import SwiftUI
 
 public extension Layer {
     
+    /// Returns the color at the given index as `uchar4`.
+    ///
+    /// - Complexity: This will synchronize the context.
+    func color(at point: CGPoint) async throws -> SIMD4<UInt8> {
+        try await self.color(at: Index(point))
+    }
+    
+    /// Returns the color at the given index as `uchar4`.
+    ///
+    /// - Complexity: This will synchronize the context.
+    func color(at index: Index) async throws -> SIMD4<UInt8> {
+        guard index.x < self.width && index.y < self.height && index.x >= 0 && index.y >= 0 else {
+            throw Index.IndexingError.indexOutOfRange
+        }
+        
+        try await self.context.synchronize()
+        
+        let width = self.width
+        let rowBytes = width * 4
+        
+        var buffer = SIMD4<UInt8>()
+        self.texture.getBytes(&buffer, bytesPerRow: rowBytes, from: MTLRegionMake2D(index.x, index.y, 1, 1), mipmapLevel: 0)
+        
+        return buffer
+    }
+    
     /// Copy the layer.
     ///
     /// Performs a bit-wise copying, so that the new layer is detached from the original one.

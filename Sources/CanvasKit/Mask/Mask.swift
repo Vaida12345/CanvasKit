@@ -206,7 +206,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         self.context = context
     }
     
-    private static func makeTexture(width: Int, height: Int) -> any MTLTexture {
+    static func makeTexture(width: Int, height: Int) -> any MTLTexture {
         let descriptor = MTLTextureDescriptor()
         descriptor.height = height
         descriptor.width = width

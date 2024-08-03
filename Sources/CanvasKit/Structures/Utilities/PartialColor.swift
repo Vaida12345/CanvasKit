@@ -49,6 +49,11 @@ public struct PartialColor: Equatable, Sendable {
         PartialColor(red: self.redComponent, green: self.greenComponent, blue: self.blueComponent, alpha: alpha)
     }
     
+    internal init(components: SIMD4<Float>, presence: SIMD4<UInt8>) {
+        self.components = components
+        self.presence = presence
+    }
+    
     /// Creates the color.
     ///
     /// - Parameters:

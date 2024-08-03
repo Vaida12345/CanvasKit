@@ -5,36 +5,27 @@
 //  Created by Vaida on 7/5/24.
 //
 
-import CoreGraphics
 import MetalManager
-import Metal
-import Stratum
 
 
 public struct SelectByColor: SelectionCriteria {
     
-    let color: Color
+    let color: PartialColor
     
-    let tolerance: UInt8
+    let tolerance: Float
     
     
-    public func select(layer: Layer) throws -> Mask {
-        let manager = try MetalManager(name: "selectByColor", fileWithin: .module, device: CanvasKitConfiguration.computeDevice)
+    public func select(layer: Layer) async throws -> Mask {
+        let texture = Mask.makeTexture(width: layer.width, height: layer.height)
         
-        manager.setConstant(layer.width)
-        manager.setConstant(color.red)
-        manager.setConstant(color.green)
-        manager.setConstant(color.blue)
-        manager.setConstant(tolerance)
+        try await MetalFunction(name: "layer_selectByColor", bundle: .module)
+            .argument(texture: layer.texture)
+            .argument(texture: texture)
+            .argument(bytes: tolerance)
+            .argument(bytes: color)
+            .dispatch(to: layer.context.addJob(), width: layer.width, height: layer.height)
         
-        let maskLength = (layer.width * layer.height)
-        
-        try manager.setBuffer(layer.buffer)
-        let maskBuffer = try manager.setEmptyBuffer(count: maskLength, type: Bool.self)
-        
-        try manager.perform(gridSize: MTLSize(width: layer.width, height: layer.height, depth: 1))
-        
-        return Mask(buffer: maskBuffer, size: layer.frame.size)
+        return Mask(texture: texture, context: layer.context)
     }
     
 }
@@ -42,7 +33,11 @@ public struct SelectByColor: SelectionCriteria {
 
 public extension SelectionCriteria where Self == SelectByColor {
     
-    static func color(_ color: Color, tolerance: UInt8 = 0) -> SelectByColor {
+    /// Select by color.
+    ///
+    /// - Parameters:
+    ///   - color: If a component is `nil`, that criteria is ignored.
+    static func color(_ color: PartialColor, tolerance: Float = 0.01) -> SelectByColor {
         SelectByColor(color: color, tolerance: tolerance)
     }
     

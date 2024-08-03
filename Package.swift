@@ -26,7 +26,6 @@ let package = Package(
             dependencies: ["MetalManager", "Stratum"],
             exclude: [
                 "Canvas",
-                "Layer/Selection",
             ]
         ),
         .testTarget(
