@@ -20,12 +20,12 @@ public final class Canvas {
     public var layers: [Layer]
     
     
-    public func makeTexture(width: Int, height: Int, context: MetalContext) async throws -> any MTLTexture {
+    public func makeLayer(width: Int, height: Int, context: MetalContext) async throws -> Layer {
         let size = CGSize(width: width, height: height)
         
         if layers.count == 1,
            let layer = layers.first {
-            return try await layer.expanding(to: CGRect(origin: -layer.origin, size: size)).makeTexture()
+            return try await layer.expanding(to: CGRect(origin: -layer.origin, size: size))
         }
         
         let device = CanvasKitConfiguration.computeDevice
@@ -63,7 +63,7 @@ public final class Canvas {
             .argument(texture: resultLayer.texture)
             .dispatch(to: context.addJob(), width: width, height: height)
         
-        return try await resultLayer.makeTexture()
+        return resultLayer
     }
     
     public func add(layer: Layer, at index: Int? = nil) {

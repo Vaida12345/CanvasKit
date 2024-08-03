@@ -15,7 +15,7 @@ import OSLog
 /// An image layer, the direct container to an image buffer.
 ///
 /// This container is tightly bound to the underlying texture. Its texture is allocated on creation, and cannot be changed. (However, the contents of such texture can). In this design, any functions that would involve creation of a new texture returns a new layer.
-public final class Layer: LayerProtocol {
+public final class Layer: LayerProtocol, @unchecked Sendable {
     
     public let texture: any MTLTexture
     
@@ -42,6 +42,10 @@ public final class Layer: LayerProtocol {
     
     public var size: CGSize {
         CGSize(width: self.texture.width, height: self.texture.height)
+    }
+    
+    public var frame: CGRect {
+        CGRect(origin: self.origin, size: self.size)
     }
     
     public func render() async throws -> CGImage {

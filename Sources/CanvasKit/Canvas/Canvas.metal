@@ -19,17 +19,19 @@ kernel void canvas_make_texture(
     texture2d<float, access::write> texture,
     uint2 position [[thread_position_in_grid]]
 ) {
+//    texture.write(textures[2].texture.read(position), position);
+//    return;
+    
     float4 color = float4(0); // last component empty
     float4 alpha = float4(0);
     
     for (int i = 0; i < textureCount; i++) {
-        if (int(position.y) < origins[i].y
-            || int(position.x) < origins[i].x
-            || position.y >= origins[i].y + textures[i].texture.get_height()
-            || position.x >= origins[i].x + textures[i].texture.get_width())
+        int2 target_position = int2(position) - origins[i];
+        
+        if (target_position.x < 0 || target_position.y < 0 || target_position.x > int(textures[i].texture.get_width()) || target_position.y > int(textures[i].texture.get_height()))
             continue;
         
-        float4 newColor = textures[i].texture.read(position);
+        float4 newColor = textures[i].texture.read(uint2(target_position));
         float newAlpha = newColor[3];
         
         for (int c = 0; c < 3; c++) {

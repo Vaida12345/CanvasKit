@@ -152,7 +152,7 @@ public extension Layer {
         let width = Int(rect.width)
         let height = Int(rect.height)
         
-        let newLayer = Layer(width: width, height: height, origin: origin, colorSpace: colorSpace, context: context)
+        let newLayer = Layer(width: width, height: height, origin: origin + rect.origin, colorSpace: colorSpace, context: context)
         newLayer.texture.label = "Layer.Texture<(\(width), \(height))>(expandOf: \(self.texture.label ?? "(unknown)"), by: \(rect))"
         
         try await MetalFunction(name: "layer_expand", bundle: .module)
