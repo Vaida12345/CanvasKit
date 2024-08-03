@@ -59,6 +59,11 @@ public struct PartialColor: Equatable, Sendable {
     /// - Parameters:
     ///   - alpha: An alpha of `0` indicates transparent, while `1` indicates full color.
     public init(red: Float?, green: Float?, blue: Float?, alpha: Float?) {
+        precondition(red   == nil || red!   <= 1 && red!   >= 0, "Value should be in range of [0, 1].")
+        precondition(green == nil || green! <= 1 && green! >= 0, "Value should be in range of [0, 1].")
+        precondition(blue  == nil || blue!  <= 1 && blue!  >= 0, "Value should be in range of [0, 1].")
+        precondition(alpha == nil || alpha! <= 1 && alpha! >= 0, "Value should be in range of [0, 1].")
+        
         let red_value = red ?? 0
         let red_presence: UInt32 = red != nil ? 1 : 0
         
