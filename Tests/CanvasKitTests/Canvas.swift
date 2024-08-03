@@ -12,6 +12,7 @@ import CanvasKit
 import Stratum
 @testable
 import MetalManager
+import AppKit
 
 
 extension Tag {
@@ -37,12 +38,12 @@ final class Canvas_Tests: TestingSuit {
         try await green_layer.fill(.green)
         
         let canvas = Canvas(layers: [red_layer, green_layer])
-        let texture = try await canvas.makeTexture(width: 100, height: 100, context: context)
+        let layer = try await canvas.makeLayer(width: 100, height: 100, context: context)
         
         try await context.synchronize()
         
         try await writeAndCompare(
-            texture: texture,
+            layer: layer,
             folder: "canvas_blend",
             name: "blend_1.png"
         )
@@ -59,14 +60,47 @@ final class Canvas_Tests: TestingSuit {
         try await green_layer.fill(.green.opacity(0.5))
         
         let canvas = Canvas(layers: [red_layer, green_layer])
-        let texture = try await canvas.makeTexture(width: 100, height: 100, context: context)
+        let layer = try await canvas.makeLayer(width: 100, height: 100, context: context)
         
         try await context.synchronize()
         
         try await writeAndCompare(
-            texture: texture,
+            layer: layer,
             folder: "canvas_blend",
             name: "blend_2.png"
+        )
+    }
+    
+    @Test
+    func test_advanced_blend_1() async throws {
+        let focusRect = CGRect(x: 333, y: 376, width: 359, height: 359)
+        let context = try await MetalContext()
+        
+        let canvas = Canvas()
+        
+        let configuration = NSImage.SymbolConfiguration(pointSize: 359, weight: .regular, scale: .large)
+        let image = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
+        
+        var focusLayer = try Layer(image, context: context)
+        focusLayer = try await focusLayer.cropping(to: focusLayer.select().boundary())
+        focusLayer = try await focusLayer.aspectRatioResize(.fit, in: focusRect)
+        let focusSelection = try await focusLayer.select()
+        try await focusLayer.fill(.init(red: 94 / 255, green: 168 / 255, blue: 224 / 255, alpha: 1), mask: focusSelection)
+        canvas.add(layer: focusLayer)
+        
+        var shadow = Layer(frame: CGRect(center: focusLayer.frame.center, size: CGSize(width: 400, height: 400)), context: context)
+        try await shadow.fill(PartialColor(red: 1, green: 1, blue: 1, alpha: 43 / 255))
+        try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), mask: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: shadow.size)).invert())
+        
+        shadow = try await shadow.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 27, distribution: 21), components: .alpha)
+        canvas.add(layer: shadow)
+        
+        let layer = try await canvas.makeLayer(width: 1024, height: 1024, context: context)
+        
+        try await writeAndCompare(
+            layer: layer,
+            folder: "canvas_blend",
+            name: "advanced_blend_1.png"
         )
     }
     

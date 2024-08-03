@@ -39,9 +39,8 @@ for i in 0..<10 {
     try await shadow.fill(PartialColor(red: 1, green: 1, blue: 1, alpha: 43 / 255))
     try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), mask: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: shadow.size)).invert())
     
-    shadow = try await shadow.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 7, distribution: 5), components: .alpha)
+    shadow = try await shadow.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 27, distribution: 21), components: .alpha)
     try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), mask: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: CGSize(width: 400, height: 400))))
-    shadow.move(to: shadow.origin + CGPoint(x: 0, y: 3))
     canvas.add(layer: shadow)
     
 //    var innerShadow = Layer(frame: focusLayer.frame, context: context)
@@ -53,6 +52,14 @@ for i in 0..<10 {
     
     let layer = try await canvas.makeLayer(width: 1024, height: 1024, context: context)
     print(date.distanceToNow())
+    
+    try await Canvas(layer: focusLayer).makeLayer(width: 1024, height: 1024, context: context)
+        .render()
+        .write(to: destination.appending(path: "blend \(i)_focus.heic"))
+    
+    try await Canvas(layer: shadow).makeLayer(width: 1024, height: 1024, context: context)
+        .render()
+        .write(to: destination.appending(path: "blend \(i)_shadow.heic"))
         
     try await layer.render().write(to: destination.appending(path: "blend \(i).heic"))
 }

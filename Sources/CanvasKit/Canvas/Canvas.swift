@@ -48,8 +48,8 @@ public final class Canvas {
         let originsBuffer = UnsafeMutableBufferPointer<Int32>.allocate(capacity: layers.count * 2)
         
         for (index, layer) in self.layers.enumerated() {
-            originsBuffer.initializeElement(at: 2 * index, to: Int32(layer.origin.x))
-            originsBuffer.initializeElement(at: 2 * index + 1, to: Int32(layer.origin.y))
+            originsBuffer.initializeElement(at: 2 * index, to: Int32(layer.origin.x.rounded(.toNearestOrAwayFromZero)))
+            originsBuffer.initializeElement(at: 2 * index + 1, to: Int32(layer.origin.y.rounded(.toNearestOrAwayFromZero)))
         }
         let buffer = try device.makeBuffer(bytes: originsBuffer)
         originsBuffer.deallocate()

@@ -41,9 +41,12 @@ kernel void canvas_make_texture(
             float oldComponent = color[c];
             
             float resultAlpha = newAlpha + oldAlpha * (1 - newAlpha);
+            if (resultAlpha == 0) continue;
+            
             float resultComponent = (newComponent * newAlpha + oldComponent * oldAlpha * (1 - newAlpha)) / resultAlpha;
             
             color[c] = resultComponent;
+//            color[c] = newComponent;
             alpha[c] = resultAlpha;
         }
     }
