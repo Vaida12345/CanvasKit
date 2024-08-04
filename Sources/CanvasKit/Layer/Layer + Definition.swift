@@ -49,7 +49,7 @@ public final class Layer: LayerProtocol, @unchecked Sendable {
     }
     
     public func render() async throws -> CGImage {
-        try await self.makeTexture().makeCGImage(channelsCount: 4)!
+        try await self.makeTexture().makeCGImage(channelsCount: 4)
     }
     
     public func move(to point: CGPoint) {

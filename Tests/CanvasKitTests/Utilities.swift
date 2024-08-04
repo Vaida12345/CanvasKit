@@ -84,14 +84,3 @@ class TestingSuit {
         await MetalManager.prepareCache()
     }
 }
-
-
-func measure<T>(_ title: String, block: () async throws -> T) async throws -> T {
-    let logger = Logger(subsystem: "CanvasKit", category: "Testing")
-    let date = Date()
-    defer {
-        logger.info("\(title), \(date.distanceToNow())")
-    }
-    
-    return try await block()
-}

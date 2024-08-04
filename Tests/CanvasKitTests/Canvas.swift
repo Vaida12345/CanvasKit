@@ -81,7 +81,7 @@ final class Canvas_Tests: TestingSuit {
         let configuration = NSImage.SymbolConfiguration(pointSize: 359, weight: .regular, scale: .large)
         let image = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
         
-        var focusLayer = try Layer(image, context: context)
+        var focusLayer = try await Layer(image, context: context)
         focusLayer = try await focusLayer.cropping(to: focusLayer.select().boundary())
         focusLayer = try await focusLayer.aspectRatioResize(.fit, in: focusRect)
         let focusSelection = try await focusLayer.select()
@@ -115,7 +115,7 @@ final class Canvas_Tests: TestingSuit {
         let configuration = NSImage.SymbolConfiguration(pointSize: 359, weight: .regular, scale: .large)
         let image = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
         
-        var focusLayer = try Layer(image, context: context)
+        var focusLayer = try await Layer(image, context: context)
         focusLayer = try await focusLayer.cropping(to: focusLayer.select().boundary())
         focusLayer = try await focusLayer.aspectRatioResize(.fit, in: focusRect)
         let focusSelection = try await focusLayer.select()

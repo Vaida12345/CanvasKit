@@ -183,7 +183,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     }
     
     public func render() async throws -> CGImage {
-        try await self.makeTexture().makeCGImage(channelsCount: 1, colorSpace: CGColorSpaceCreateDeviceGray(), bitmapInfo: .none)!
+        try await self.makeTexture().makeCGImage(channelsCount: 1, colorSpace: CGColorSpaceCreateDeviceGray(), bitmapInfo: .none)
     }
     
     init(texture: any MTLTexture, context: MetalContext) {
@@ -197,7 +197,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         descriptor.width = width
         descriptor.pixelFormat = .r8Unorm
         descriptor.usage = .shaderReadWrite
-        descriptor.storageMode = .shared
+        descriptor.storageMode = .private
         
         let device = CanvasKitConfiguration.computeDevice
         return device.makeTexture(descriptor: descriptor)!

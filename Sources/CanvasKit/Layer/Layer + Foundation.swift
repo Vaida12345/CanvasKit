@@ -90,8 +90,8 @@ public extension Layer {
             return false
         }
         
-        let _lhs = self.texture.makeBuffer(channelsCount: 4)
-        let _rhs = rhs.texture.makeBuffer(channelsCount: 4)
+        let _lhs = try self.texture.makeBuffer(channelsCount: 4)
+        let _rhs = try rhs.texture.makeBuffer(channelsCount: 4)
         
         defer {
             _lhs.deallocate()

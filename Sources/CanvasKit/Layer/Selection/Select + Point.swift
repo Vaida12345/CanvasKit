@@ -28,7 +28,7 @@ public struct SelectByColorFromPoint: SelectionCriteria {
         
         
         try await mask.context.synchronize()
-        let originalMaskBuffer = mask.texture.makeBuffer(channelsCount: 1)
+        let originalMaskBuffer = try mask.texture.makeBuffer(channelsCount: 1)
         let width = mask.width
         
         let maskLength = (layer.width * layer.height)

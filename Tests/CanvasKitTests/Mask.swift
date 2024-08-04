@@ -81,7 +81,7 @@ final class MaskSuit: TestingSuit {
         
         try await invert.context.synchronize()
         
-        for (lhs, rhs) in zip(mask.texture.makeBuffer(channelsCount: 1), invert.texture.makeBuffer(channelsCount: 1)) {
+        for (lhs, rhs) in try zip(mask.texture.makeBuffer(channelsCount: 1), invert.texture.makeBuffer(channelsCount: 1)) {
             try #require(lhs + rhs == .max)
         }
     }

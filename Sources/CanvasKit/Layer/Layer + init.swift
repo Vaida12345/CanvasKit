@@ -7,8 +7,9 @@
 
 import Foundation
 import CoreGraphics
-import SwiftUI
+@preconcurrency import SwiftUI
 import MetalManager
+import Stratum
 
 
 extension Layer {
@@ -19,9 +20,13 @@ extension Layer {
     ///
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
-    public convenience init(_ image: CGImage, origin: CGPoint = .zero, context: MetalContext) throws {
-        let device = CanvasKitConfiguration.computeDevice
-        let texture = try device.makeTexture(from: image, usage: .shaderReadWrite)
+    public convenience init(_ image: CGImage, origin: CGPoint = .zero, context: MetalContext) async throws {
+        let device = measure("make compute device") {
+            CanvasKitConfiguration.computeDevice
+        }
+        let texture = try await measure("make texture") {
+            try await device.makeTexture(from: image, usage: .shaderReadWrite, context: context)
+        }
         
         self.init(texture: texture, frame: CGRect(origin: origin, size: CGSize(width: image.width, height: image.height)), colorSpace: image.colorSpace!, context: context)
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
@@ -33,11 +38,11 @@ extension Layer {
     ///
     /// - Parameters:
     ///   - center: The point relative to the canvas.
-    public convenience init(_ image: CGImage, center: CGPoint, context: MetalContext) throws {
+    public convenience init(_ image: CGImage, center: CGPoint, context: MetalContext) async throws {
         let width = image.width
         let height = image.height
         
-        try self.init(image, origin: CGRect(center: center, size: CGSize(width: width, height: height)).origin, context: context)
+        try await self.init(image, origin: CGRect(center: center, size: CGSize(width: width, height: height)).origin, context: context)
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
@@ -51,7 +56,7 @@ extension Layer {
         descriptor.width = width
         descriptor.pixelFormat = .rgba8Unorm
         descriptor.usage = .shaderReadWrite
-        descriptor.storageMode = .shared
+        descriptor.storageMode = .private
         
         let device = CanvasKitConfiguration.computeDevice
         let texture = device.makeTexture(descriptor: descriptor)!
@@ -98,10 +103,10 @@ extension Layer {
 #endif
     
     @MainActor
-    public convenience init(_ view: some View, size: CGSize, context: MetalContext) throws {
+    public convenience init(_ view: some View, size: CGSize, context: MetalContext) async throws {
         let renderer = ImageRenderer(content: view)
         renderer.proposedSize = .init(size)
-        try self.init(renderer.cgImage!, context: context)
+        try await self.init(renderer.cgImage!, context: context)
     }
     
 }

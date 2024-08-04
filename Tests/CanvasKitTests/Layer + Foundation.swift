@@ -30,7 +30,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_color_at() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         
         #expect(try await layer.color(at: CGPoint(x: 5, y: 5)) == SIMD4<UInt8>(0, 0, 0, 130))
         #expect(try await layer.color(at: CGPoint(x: 0, y: 0)) == SIMD4<UInt8>(0, 0, 0, 0))
@@ -42,7 +42,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_copy() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         
         #expect(try await layer.isBitwiseEqual(to: layer.copy()))
     }
@@ -50,7 +50,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_copy_with_selection() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         let mask = try await Mask(width: layer.width, height: layer.height, selecting: CGRect(x: 2, y: 2, width: 10, height: 10), context: context)
         let copy = try await layer.copy(selection: mask)
         try await layer.fill(.clear, selection: mask.invert())
@@ -61,7 +61,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_expand() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         
         let expandedMask = try await layer.expanding(to: CGRect(origin: -CGPoint(x: 10, y: 10), size: .square(50)))
         
@@ -81,7 +81,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_invert() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         
         try await layer.invert()
         
@@ -95,7 +95,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_subtract() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         try await layer.fill(.white.opacity(nil))
         
         let other = Layer(width: layer.width, height: layer.height, context: context)
@@ -113,7 +113,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_conv() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         try await layer.fill(.white.opacity(nil))
         
         let conv_1x1 = try await layer.convolution(kernel: .gaussianBlurKernel(size: 1, distribution: 1))
@@ -135,7 +135,7 @@ final class Layer_Foundation: TestingSuit {
     @Test
     func layer_resize() async throws {
         let context = try await MetalContext()
-        let layer = try Layer(makeSampleCGImage(), context: context)
+        let layer = try await Layer(makeSampleCGImage(), context: context)
         try await layer.fill(.white.opacity(nil))
         
         let resize_large = try await layer.resized(to: CGSize(width: 400, height: 200))

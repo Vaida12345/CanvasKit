@@ -32,12 +32,18 @@ final class Layer_init: TestingSuit {
         let source = makeSampleCGImage()
         let context = try await MetalContext()
         
-        let layer = try Layer(source, context: context)
+        let layer = try await Layer(source, context: context)
         let rendered = try await layer.render()
+        
+        try await writeAndCompare(
+            layer: layer,
+            folder: "layer_init",
+            name: "init_from_image.png"
+        )
         
         assertCGImagesEqual(source, rendered)
         
-        let second = try Layer(source, center: .zero, context: context)
+        let second = try await Layer(source, center: .zero, context: context)
         try await assertCGImagesEqual(second.render(), source)
         #expect(second.origin == -CGPoint(x: source.width / 2, y: source.height / 2))
     }
