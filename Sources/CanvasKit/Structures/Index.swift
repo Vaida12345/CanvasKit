@@ -31,6 +31,8 @@ public struct Index {
     
     /// Creates an index.
     public init(_ point: CGPoint) {
+        precondition(point.x >= 0 && point.y >= 0)
+        
         let x = Int(point.x.rounded(.toNearestOrAwayFromZero))
         let y = Int(point.y.rounded(.toNearestOrAwayFromZero))
         

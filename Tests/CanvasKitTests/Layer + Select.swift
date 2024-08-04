@@ -55,8 +55,6 @@ final class Layer_Select: TestingSuit {
         let context = try await MetalContext()
         let layer = try await Layer(makeDisjointCGImage(), context: context)
         
-        try await print(layer.color(at: CGPoint(x: 5, y: 5)))
-        
         try await writeAndCompare(
             layer: layer.select(by: .color(at: CGPoint(x: 5, y: 5), contiguous: false)),
             folder: "layer_select",

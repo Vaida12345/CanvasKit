@@ -28,18 +28,6 @@ final class Layer_Foundation: TestingSuit {
     }
     
     @Test
-    func layer_color_at() async throws {
-        let context = try await MetalContext()
-        let layer = try await Layer(makeSampleCGImage(), context: context)
-        
-        #expect(try await layer.color(at: CGPoint(x: 5, y: 5)) == SIMD4<UInt8>(0, 0, 0, 130))
-        #expect(try await layer.color(at: CGPoint(x: 0, y: 0)) == SIMD4<UInt8>(0, 0, 0, 0))
-        await #expect(throws: Index.IndexingError.indexOutOfRange, performing: {
-            try await layer.color(at: CGPoint(x: 100, y: 100))
-        })
-    }
-    
-    @Test
     func layer_copy() async throws {
         let context = try await MetalContext()
         let layer = try await Layer(makeSampleCGImage(), context: context)

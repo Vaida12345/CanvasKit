@@ -72,16 +72,10 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     public func boundary() async throws -> CGRect {
         if let _boundary { return _boundary }
         
-        let date = Date()
-        defer {
-            print("calc boundary took \(date.distanceToNow())")
-        }
-        
-        let _rows = UnsafeMutableBufferPointer<Bool>.allocate(capacity: self.height)
-        let _columns = UnsafeMutableBufferPointer<Bool>.allocate(capacity: self.width)
-        
-        let rows = try MetalManager.computeDevice.makeBuffer(bytesNoCopy: _rows)
-        let columns = try MetalManager.computeDevice.makeBuffer(bytesNoCopy: _columns)
+        nonisolated(unsafe)
+        let rows = try MetalManager.computeDevice.makeBuffer(of: Bool.self, count: self.height)
+        nonisolated(unsafe)
+        let columns = try MetalManager.computeDevice.makeBuffer(of: Bool.self, count: self.width)
         
         try await MetalFunction(name: "mask_check_zeros_by_rows_columns", bundle: .module)
             .argument(texture: self.texture)
@@ -89,9 +83,10 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
             .argument(buffer: columns)
             .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
         
-        let date2 = Date()
         try await context.synchronize()
-        print("boundary context took \(date2.distanceToNow())")
+        
+        let _rows = UnsafeMutableBufferPointer(start: rows.contents().assumingMemoryBound(to: Bool.self), count: self.height)
+        let _columns = UnsafeMutableBufferPointer(start: columns.contents().assumingMemoryBound(to: Bool.self), count: self.width)
         
         let x_start = _columns.firstIndex(of: true) ?? 0
         let x_end   = _columns.lastIndex(of: true)  ?? 0

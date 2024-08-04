@@ -21,9 +21,19 @@ public struct SelectByColorFromPoint: SelectionCriteria {
     
     
     public func select(layer: Layer) async throws -> Mask {
-        let color = try await layer.color(at: index)
-        let partialColor = PartialColor(red: Float(color[0]) / 255, green: Float(color[1]) / 255, blue: Float(color[2]) / 255, alpha: Float(color[3]) / 255)
-        let mask = try await SelectByColor(color: partialColor, tolerance: tolerance).select(layer: layer)
+        precondition(index.x <= layer.width && index.y <= layer.height)
+        
+        let texture = Mask.makeTexture(width: layer.width, height: layer.height)
+        
+        try await MetalFunction(name: "layer_selectByPoint", bundle: .module)
+            .argument(texture: layer.texture)
+            .argument(texture: texture)
+            .argument(bytes: tolerance)
+            .argument(bytes: SIMD2<UInt32>(UInt32(index.x), UInt32(index.y)))
+            .dispatch(to: layer.context.addJob(), width: layer.width, height: layer.height)
+        
+        let mask = Mask(texture: texture, context: layer.context)
+        
         guard contiguous else { return mask }
         
         
@@ -69,7 +79,7 @@ public extension SelectionCriteria where Self == SelectByColorFromPoint {
     ///
     /// - Complexity: This will synchronize the context when `contiguous`.
     static func color(at point: CGPoint, tolerance: Float = 0.1, contiguous: Bool = true) -> SelectByColorFromPoint {
-        SelectByColorFromPoint(index: Index(point), tolerance: tolerance, contiguous: contiguous)
+        return SelectByColorFromPoint(index: Index(point), tolerance: tolerance, contiguous: contiguous)
     }
     
 }
