@@ -267,4 +267,20 @@ public extension Layer {
         return layer
     }
     
+    /// Shift the underlying texture.
+    ///
+    /// Please note that by shifting the layer, some pixels may be discarded. The new regions will be filled with ``PartialColor/clear``.
+    func shifted(x: Int, y: Int) async throws -> Layer {
+        let newLayer = Layer(width: self.width, height: self.height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
+        newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(shiftedFrom: \(self.texture.label ?? "(unknown)"))"
+        
+        try await MetalFunction(name: "layer_duplicate_shift", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newLayer.texture)
+            .argument(bytes: SIMD2<Int32>(Int32(x), Int32(y)))
+            .dispatch(to: self.context.addJob(), width: Int(size.width), height: Int(size.height))
+        
+        return newLayer
+    }
+    
 }

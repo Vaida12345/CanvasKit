@@ -142,4 +142,18 @@ final class Layer_Foundation: TestingSuit {
         )
     }
     
+    @Test
+    func layer_shifted() async throws {
+        let context = try await MetalContext()
+        let layer = try await Layer(makeSampleCGImage(), context: context)
+        
+        let newLayer = try await layer.shifted(x: 10, y: 10)
+        
+        try await writeAndCompare(
+            layer: newLayer,
+            folder: "layer_shifted",
+            name: "layer_shifted.png"
+        )
+    }
+    
 }

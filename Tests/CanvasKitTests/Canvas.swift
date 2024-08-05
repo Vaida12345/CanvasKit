@@ -82,7 +82,7 @@ final class Canvas_Tests: TestingSuit {
         let image = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
         
         var focusLayer = try await Layer(image, context: context)
-        focusLayer = try awa≈it focusLayer.cropping(to: focusLayer.select().boundary())
+        focusLayer = try await focusLayer.cropping(to: focusLayer.select().boundary())
         
         focusLayer = try await focusLayer.aspectRatioResize(.fit, in: focusRect)
         let focusSelection = try await focusLayer.select()

@@ -173,3 +173,18 @@ kernel void lanczosResample(texture2d<float, access::read>  input,
     float4 output_color = totalColor / totalWeight;
     output.write(output_color, output_position);
 }
+
+kernel void layer_duplicate_shift(texture2d<float, access::read>  input,
+                                  texture2d<float, access::write> output,
+                                  constant int2& shift,
+                                  uint2 input_position [[thread_position_in_grid]]) {
+    int2 output_position = int2(input_position) + shift;
+    
+    if (output_position.x < 0 || output_position.y < 0) return;
+    
+    uint2 position = uint2(output_position);
+    if (position.x > output.get_width() || position.y > output.get_height()) return;
+    
+    float4 color = input.read(input_position);
+    output.write(color, position);
+}
