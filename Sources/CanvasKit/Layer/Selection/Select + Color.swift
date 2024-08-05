@@ -23,7 +23,7 @@ public struct SelectByColor: SelectionCriteria {
             .argument(texture: texture)
             .argument(bytes: tolerance)
             .argument(bytes: color)
-            .dispatch(to: layer.context.addJob(), width: layer.width, height: layer.height)
+            .dispatch(to: layer.context, width: layer.width, height: layer.height)
         
         return Mask(texture: texture, context: layer.context)
     }

@@ -30,7 +30,7 @@ public struct SelectByColorFromPoint: SelectionCriteria {
             .argument(texture: texture)
             .argument(bytes: tolerance)
             .argument(bytes: SIMD2<UInt32>(UInt32(index.x), UInt32(index.y)))
-            .dispatch(to: layer.context.addJob(), width: layer.width, height: layer.height)
+            .dispatch(to: layer.context, width: layer.width, height: layer.height)
         
         let mask = Mask(texture: texture, context: layer.context)
         

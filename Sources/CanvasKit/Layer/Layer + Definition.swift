@@ -56,15 +56,11 @@ public final class Layer: LayerProtocol, @unchecked Sendable {
         self.origin = point
     }
     
-    public init(texture: any MTLTexture, origin: CGPoint = .zero, colorSpace: CGColorSpace, context: MetalContext) {
+    public init(texture: any MTLTexture, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) {
         self.texture = texture
         self.origin = origin
         self.colorSpace = colorSpace
         self.context = context
-    }
-    
-    public convenience init(texture: any MTLTexture, frame: CGRect, colorSpace: CGColorSpace, context: MetalContext) {
-        self.init(texture: texture, origin: frame.origin, colorSpace: colorSpace, context: context)
     }
     
 }

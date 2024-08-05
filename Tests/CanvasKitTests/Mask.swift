@@ -89,8 +89,8 @@ final class MaskSuit: TestingSuit {
     @Test func mask_expand() async throws {
         let logger = Logger(subsystem: "CanvasKit", category: "Testing")
         
-        let context = try await measure("make context") {
-            try await MetalContext()
+        let context = measure("make context") {
+            MetalContext()
         }
         
         let date = Date()

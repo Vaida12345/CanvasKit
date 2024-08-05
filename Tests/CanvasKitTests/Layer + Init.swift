@@ -30,7 +30,7 @@ final class Layer_init: TestingSuit {
     @Test
     func init_from_image() async throws {
         let source = makeSampleCGImage()
-        let context = try await MetalContext()
+        let context = MetalContext()
         
         let layer = try await Layer(source, context: context)
         let rendered = try await layer.render()
@@ -50,7 +50,7 @@ final class Layer_init: TestingSuit {
     
     @Test
     func init_empty() async throws {
-        let context = try await MetalContext()
+        let context = MetalContext()
         let layer = Layer(width: 1000, height: 1000, context: context)
         
         try await writeAndCompare(

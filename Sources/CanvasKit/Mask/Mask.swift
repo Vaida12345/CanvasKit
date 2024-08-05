@@ -47,7 +47,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await MetalFunction(name: "mask_check_full_zeros", bundle: .module)
             .argument(texture: self.texture)
             .argument(state: state)
-            .dispatch(to: context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: context, width: self.width, height: self.height)
         
         self._isEmpty = state
         
@@ -81,7 +81,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
             .argument(texture: self.texture)
             .argument(buffer: rows)
             .argument(buffer: columns)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         try await context.synchronize()
         
@@ -104,7 +104,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await MetalFunction(name: "mask_duplicate_inverse", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: newTexture)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         newTexture.label = "Mask.Texture<(\(width), \(height))>(inverseOf: \(self.texture.label ?? "(unknown)"))"
         return Mask(texture: newTexture, context: self.context)
@@ -146,7 +146,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
             .argument(texture: self.texture)
             .argument(texture: newTexture)
             .argument(bytes: DiscreteRect(rect))
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         return Mask(texture: newTexture, context: self.context)
     }
@@ -213,7 +213,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await MetalFunction(name: "mask_fill_with", bundle: .module)
             .argument(texture: texture)
             .argument(bytes: float)
-            .dispatch(to: context.addJob(), width: width, height: height)
+            .dispatch(to: context, width: width, height: height)
         
         texture.label = "Mask.Texture<(\(width), \(height))>(origin: \(#function))"
         self.init(texture: texture, context: context)
@@ -226,7 +226,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await MetalFunction(name: "mask_fill_with_selection", bundle: .module)
             .argument(texture: texture)
             .argument(bytes: DiscreteRect(selection))
-            .dispatch(to: context.addJob(), width: width, height: height)
+            .dispatch(to: context, width: width, height: height)
         
         texture.label = "Mask.Texture<(\(width), \(height))>(origin: \(#function))"
         self.init(texture: texture, context: context)

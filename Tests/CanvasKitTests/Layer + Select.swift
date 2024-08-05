@@ -28,7 +28,7 @@ final class Layer_Select: TestingSuit {
     
     @Test
     func select_by_visible() async throws {
-        let context = try await MetalContext()
+        let context = MetalContext()
         let layer = try await Layer(makeSampleCGImage(), context: context)
         
         try await writeAndCompare(
@@ -40,7 +40,7 @@ final class Layer_Select: TestingSuit {
     
     @Test
     func select_by_color() async throws {
-        let context = try await MetalContext()
+        let context = MetalContext()
         let layer = try await Layer(makeSampleCGImage(), context: context)
         
         try await writeAndCompare(
@@ -52,7 +52,7 @@ final class Layer_Select: TestingSuit {
     
     @Test
     func select_by_point() async throws {
-        let context = try await MetalContext()
+        let context = MetalContext()
         let layer = try await Layer(makeDisjointCGImage(), context: context)
         
         try await writeAndCompare(

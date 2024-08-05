@@ -16,7 +16,7 @@ kernel void canvas_make_texture(
     device SingleTexture* textures,
     device int2 *origins,
     constant int& textureCount,
-    texture2d<float, access::write> texture,
+    texture2d<float, access::write> output,
     uint2 position [[thread_position_in_grid]]
 ) {
 //    texture.write(textures[2].texture.read(position), position);
@@ -53,5 +53,5 @@ kernel void canvas_make_texture(
     float resultAlpha = max(alpha[0], max(alpha[1], alpha[2]));
     color[3] = resultAlpha;
     
-    texture.write(color, position);
+    output.write(color, position);
 }

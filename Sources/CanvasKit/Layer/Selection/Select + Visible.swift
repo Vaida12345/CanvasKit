@@ -19,7 +19,7 @@ public struct SelectByVisible: SelectionCriteria {
             .argument(texture: layer.texture)
             .argument(texture: texture)
             .argument(bytes: tolerance)
-            .dispatch(to: layer.context.addJob(), width: layer.width, height: layer.height)
+            .dispatch(to: layer.context, width: layer.width, height: layer.height)
         
         return Mask(texture: texture, context: layer.context)
     }

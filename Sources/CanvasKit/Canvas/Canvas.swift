@@ -33,11 +33,12 @@ public final class Canvas {
         let descriptor = MTLArgumentDescriptor()
         descriptor.dataType = .texture
         descriptor.index = 0
-        descriptor.access = .readOnly
+        descriptor.access = .readWrite
         descriptor.arrayLength = layers.count
         descriptor.textureType = .type2D
         
         let encoder = device.makeArgumentEncoder(arguments: [descriptor])!
+        encoder.label = "ArgumentEncoder(for \(#function))"
         let argumentBuffer = device.makeBuffer(length: encoder.encodedLength)!
         encoder.setArgumentBuffer(argumentBuffer, offset: 0)
         
@@ -61,7 +62,7 @@ public final class Canvas {
             .argument(buffer: buffer)
             .argument(bytes: Int32(self.layers.count))
             .argument(texture: resultLayer.texture)
-            .dispatch(to: context.addJob(), width: width, height: height)
+            .dispatch(to: context, width: width, height: height)
         
         return resultLayer
     }

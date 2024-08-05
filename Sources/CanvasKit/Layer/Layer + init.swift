@@ -28,7 +28,7 @@ extension Layer {
             try await device.makeTexture(from: image, usage: .shaderReadWrite, context: context)
         }
         
-        self.init(texture: texture, frame: CGRect(origin: origin, size: CGSize(width: image.width, height: image.height)), colorSpace: image.colorSpace!, context: context)
+        self.init(texture: texture, origin: origin, colorSpace: image.colorSpace!, context: context)
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
@@ -61,7 +61,7 @@ extension Layer {
         let device = CanvasKitConfiguration.computeDevice
         let texture = device.makeTexture(descriptor: descriptor)!
         
-        self.init(texture: texture, frame: CGRect(origin: origin, size: CGSize(width: width, height: height)), colorSpace: colorSpace, context: context)
+        self.init(texture: texture, origin: origin, colorSpace: colorSpace, context: context)
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
@@ -74,18 +74,17 @@ extension Layer {
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
-#if false
     /// Initialize the container filled with the given color.
     ///
     /// The image will be converted into a 8 bits-per-component, with premultiplied last alpha.
     ///
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
-    public convenience init(fill: Color, width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) throws {
+    public convenience init(fill: PartialColor, width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) async throws {
         self.init(width: width, height: height, origin: origin, colorSpace: colorSpace, context: context)
         
         guard fill != .white else { return }
-        try self.fill(color: fill, selection: Mask(repeating: 255, width: width, height: height, context: context))
+        try await self.fill(fill, selection: Mask(repeating: 255, width: width, height: height, context: context))
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
@@ -95,12 +94,11 @@ extension Layer {
     ///
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
-    public convenience init(fill: Color, frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) throws {
-        try self.init(fill: fill, width: Int(frame.width), height: Int(frame.height), colorSpace: colorSpace, context: context)
+    public convenience init(fill: PartialColor, frame: CGRect, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) async throws {
+        try await self.init(fill: fill, width: Int(frame.width), height: Int(frame.height), origin: frame.origin, colorSpace: colorSpace, context: context)
         
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
-#endif
     
     @MainActor
     public convenience init(_ view: some View, size: CGSize, context: MetalContext) async throws {

@@ -29,7 +29,7 @@ final class Canvas_Tests: TestingSuit {
     
     @Test
     func test_blend_1() async throws {
-        let context = try await MetalContext()
+        let context = MetalContext()
         
         let red_layer = Layer(width: 100, height: 100, context: context)
         try await red_layer.fill(.red)
@@ -51,7 +51,7 @@ final class Canvas_Tests: TestingSuit {
     
     @Test
     func test_blend_2() async throws {
-        let context = try await MetalContext()
+        let context = MetalContext()
         
         let red_layer = Layer(width: 100, height: 100, context: context)
         try await red_layer.fill(.red.opacity(0.5))
@@ -74,7 +74,7 @@ final class Canvas_Tests: TestingSuit {
     @Test
     func test_advanced_blend_1() async throws {
         let focusRect = CGRect(x: 333, y: 376, width: 359, height: 359)
-        let context = try await MetalContext()
+        let context = MetalContext()
         
         let canvas = Canvas()
         
@@ -109,7 +109,7 @@ final class Canvas_Tests: TestingSuit {
     @Test
     func test_advanced_blend_2() async throws {
         let focusRect = CGRect(x: 333, y: 376, width: 359, height: 359)
-        let context = try await MetalContext()
+        let context = MetalContext()
         
         let canvas = Canvas()
         

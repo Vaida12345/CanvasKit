@@ -23,7 +23,7 @@ public extension Layer {
         try await MetalFunction(name: "layer_duplicate", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         return newLayer
     }
@@ -44,7 +44,7 @@ public extension Layer {
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
             .argument(texture: selection.texture)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         return newLayer
     }
@@ -86,7 +86,7 @@ public extension Layer {
             .argument(texture: self.texture)
             .argument(texture: selection.texture)
             .argument(bytes: color)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
     }
     
     /// Fill the area masked by `mask` by the `color`.
@@ -96,7 +96,20 @@ public extension Layer {
         try await MetalFunction(name: "layer_fill", bundle: .module)
             .argument(texture: self.texture)
             .argument(bytes: color)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
+    }
+    
+    /// Fill the area masked by `mask` by the `color`.
+    ///
+    /// If a channel is `nil`, that channel is unmodified.
+    func fill(red: Float?, green: Float?, blue: Float?, alpha: Float?, selection: Mask? = nil) async throws {
+        let color = PartialColor(red: red, green: green, blue: blue, alpha: alpha)
+        
+        if let selection {
+            try await self.fill(color, selection: selection)
+        } else {
+            try await self.fill(color)
+        }
     }
     
     /// Expand the Layer.
@@ -135,7 +148,7 @@ public extension Layer {
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
             .argument(bytes: DiscreteRect(rect))
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         return newLayer
     }
@@ -175,7 +188,7 @@ public extension Layer {
     func invert() async throws {
         try await MetalFunction(name: "layer_invert", bundle: .module)
             .argument(texture: self.texture)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
     }
     
     /// Component-wise subtraction.
@@ -197,7 +210,7 @@ public extension Layer {
         try await MetalFunction(name: "layer_subtract", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: other.texture)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
     }
     
     /// Component-wise subtraction.
@@ -238,7 +251,7 @@ public extension Layer {
             .argument(buffer: _kernel)
             .argument(bytes: SIMD2<Int32>(Int32(kernel.width), Int32(kernel.height)))
             .argument(bytes: components)
-            .dispatch(to: self.context.addJob(), width: self.width, height: self.height)
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         return newLayer
     }
@@ -253,7 +266,7 @@ public extension Layer {
         try await MetalFunction(name: "lanczosResample", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
-            .dispatch(to: self.context.addJob(), width: Int(size.width), height: Int(size.height))
+            .dispatch(to: self.context, width: Int(size.width), height: Int(size.height))
         
         return newLayer
     }
@@ -278,7 +291,7 @@ public extension Layer {
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
             .argument(bytes: SIMD2<Int32>(Int32(x), Int32(y)))
-            .dispatch(to: self.context.addJob(), width: Int(size.width), height: Int(size.height))
+            .dispatch(to: self.context, width: Int(size.width), height: Int(size.height))
         
         return newLayer
     }

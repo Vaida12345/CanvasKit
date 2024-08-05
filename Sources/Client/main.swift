@@ -19,7 +19,7 @@ try destination.makeDirectory()
 await MetalManager.prepareCache()
 
 let focusRect = CGRect(x: 333, y: 376, width: 359, height: 359)
-let context = try await MetalContext()
+let context = MetalContext()
 
 let configuration = NSImage.SymbolConfiguration(pointSize: 359, weight: .regular, scale: .large)
 let image = NSImage(systemSymbolName: "shippingbox", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
