@@ -3,14 +3,14 @@
 #include "../Structures/Utilities/DiscreteRect.h"
 using namespace metal;
 
-kernel void mask_fill_with(texture2d<float, access::write> texture,
-                           constant float& fill,
+kernel void mask_fill_with(texture2d<half, access::write> texture,
+                           constant half& fill,
                            uint2 position [[thread_position_in_grid]]) {
     texture.write(fill, position);
 }
 
 
-kernel void mask_fill_with_selection(texture2d<float, access::write> texture,
+kernel void mask_fill_with_selection(texture2d<half, access::write> texture,
                                      constant DiscreteRect& rect,
                                      uint2 _position [[thread_position_in_grid]]) {
     // Calculate the bounds of the rectangle
@@ -30,11 +30,11 @@ kernel void mask_fill_with_selection(texture2d<float, access::write> texture,
 }
 
 
-kernel void mask_check_full_zeros(texture2d<float, access::read> texture [[texture(0)]],
+kernel void mask_check_full_zeros(texture2d<half, access::read> texture [[texture(0)]],
                                   device bool* result [[buffer(0)]],
                                   uint2 position [[thread_position_in_grid]]) {
     // Read the pixel value at the current position
-    float pixelValue = texture.read(position).r;
+    half pixelValue = texture.read(position).r;
     
     // Check if the pixel is non-zero
     if (pixelValue != 0) {
@@ -44,12 +44,12 @@ kernel void mask_check_full_zeros(texture2d<float, access::read> texture [[textu
 }
 
 
-kernel void mask_check_zeros_by_rows_columns(texture2d<float, access::read> texture [[texture(0)]],
+kernel void mask_check_zeros_by_rows_columns(texture2d<half, access::read> texture [[texture(0)]],
                                      device bool* rows [[buffer(0)]],
                                      device bool* columns [[buffer(1)]],
                                      uint2 position [[thread_position_in_grid]]) {
     // Read the pixel value at the current position
-    float pixelValue = texture.read(position).r;
+    half pixelValue = texture.read(position).r;
     
     // Check if the pixel is non-zero
     if (pixelValue != 0) {
@@ -59,15 +59,15 @@ kernel void mask_check_zeros_by_rows_columns(texture2d<float, access::read> text
 }
 
 
-kernel void mask_duplicate_inverse(texture2d<float, access::read>  input  [[texture(0)]],
-                                   texture2d<float, access::write> output [[texture(1)]],
+kernel void mask_duplicate_inverse(texture2d<half, access::read>  input  [[texture(0)]],
+                                   texture2d<half, access::write> output [[texture(1)]],
                                    uint2 position [[thread_position_in_grid]]) {
     output.write(1 - input.read(position).r, position);
 }
 
 
-kernel void mask_expand(texture2d<float, access::read>  input  [[texture(0)]],
-                        texture2d<float, access::write> output [[texture(1)]],
+kernel void mask_expand(texture2d<half, access::read>  input  [[texture(0)]],
+                        texture2d<half, access::write> output [[texture(1)]],
                         constant DiscreteRect& rect,
                         uint2 position [[thread_position_in_grid]]) {
     int2 dest = int2(position) - rect.origin;
@@ -75,6 +75,6 @@ kernel void mask_expand(texture2d<float, access::read>  input  [[texture(0)]],
     if (dest.x < 0 || dest.y < 0 || dest.x >= rect.size.x || dest.y >= rect.size.y)
         return;
     
-    float pixelValue = input.read(position).r;
+    half pixelValue = input.read(position).r;
     output.write(pixelValue, uint2(dest));
 }

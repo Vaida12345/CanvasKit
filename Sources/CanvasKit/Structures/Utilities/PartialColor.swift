@@ -14,28 +14,28 @@ import SwiftUI
 /// The color in `UInt8`.
 public struct PartialColor: Equatable, Sendable {
     
-    let components: SIMD4<Float>
+    let components: SIMD4<Float16>
     
     let presence: SIMD4<UInt32>
     
     
-    public var redComponent: Float? {
+    public var redComponent: Float16? {
         guard presence[0] != 0 else { return nil }
         return self.components[0]
     }
     
-    public var greenComponent: Float? {
+    public var greenComponent: Float16? {
         guard presence[1] != 0 else { return nil }
         return self.components[1]
     }
     
-    public var blueComponent: Float? {
+    public var blueComponent: Float16? {
         guard presence[2] != 0 else { return nil }
         return self.components[2]
     }
     
     /// An alpha of `0` indicates transparent, while `1` indicates full color.
-    public var alphaComponent: Float? {
+    public var alphaComponent: Float16? {
         guard presence[3] != 0 else { return nil }
         return self.components[3]
     }
@@ -45,11 +45,11 @@ public struct PartialColor: Equatable, Sendable {
     ///
     /// - Parameters:
     ///   - alpha: An alpha of `0` indicates transparent, while `1` indicates full color.
-    public func opacity(_ alpha: Float?) -> PartialColor {
+    public func opacity(_ alpha: Float16?) -> PartialColor {
         PartialColor(red: self.redComponent, green: self.greenComponent, blue: self.blueComponent, alpha: alpha)
     }
     
-    internal init(components: SIMD4<Float>, presence: SIMD4<UInt32>) {
+    internal init(components: SIMD4<Float16>, presence: SIMD4<UInt32>) {
         self.components = components
         self.presence = presence
     }
@@ -58,7 +58,7 @@ public struct PartialColor: Equatable, Sendable {
     ///
     /// - Parameters:
     ///   - alpha: An alpha of `0` indicates transparent, while `1` indicates full color.
-    public init(red: Float?, green: Float?, blue: Float?, alpha: Float?) {
+    public init(red: Float16?, green: Float16?, blue: Float16?, alpha: Float16?) {
         precondition(red   == nil || red!   <= 1 && red!   >= 0, "Value should be in range of [0, 1].")
         precondition(green == nil || green! <= 1 && green! >= 0, "Value should be in range of [0, 1].")
         precondition(blue  == nil || blue!  <= 1 && blue!  >= 0, "Value should be in range of [0, 1].")
@@ -83,10 +83,10 @@ public struct PartialColor: Equatable, Sendable {
     public init(_ color: SwiftUI.Color) {
         let color = color.animatableData
         self.init(
-            red: Float(color[0]),
-            green: Float(color[1]),
-            blue: Float(color[2]),
-            alpha: Float(color[3])
+            red: Float16(color[0]),
+            green: Float16(color[1]),
+            blue: Float16(color[2]),
+            alpha: Float16(color[3])
         )
     }
     

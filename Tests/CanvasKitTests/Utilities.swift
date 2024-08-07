@@ -68,8 +68,9 @@ class TestingSuit {
     
     
     func writeAndCompare(layer: some LayerProtocol, folder: String, name: String = "result.png") async throws {
-        let result = try tempFolder().appending(path: folder + "/" + name)
-        try result.generateDirectory()
+        let folderItem = try tempFolder().appending(path: folder)
+        let result = folderItem.appending(path: name)
+        try folderItem.makeDirectory()
         
         let logger = Logger(subsystem: "CanvasKit", category: "Testing")
         let date = Date()

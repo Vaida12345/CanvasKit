@@ -102,7 +102,7 @@ public extension Layer {
     /// Fill the area masked by `mask` by the `color`.
     ///
     /// If a channel is `nil`, that channel is unmodified.
-    func fill(red: Float?, green: Float?, blue: Float?, alpha: Float?, selection: Mask? = nil) async throws {
+    func fill(red: Float16?, green: Float16?, blue: Float16?, alpha: Float16?, selection: Mask? = nil) async throws {
         let color = PartialColor(red: red, green: green, blue: blue, alpha: alpha)
         
         if let selection {
@@ -234,7 +234,7 @@ public extension Layer {
     ///         [7/273, 26/273, 41/273, 26/273,  7/273],
     ///         [4/273, 16/273, 26/273, 16/273,  4/273],
     ///         [1/273,  4/273,  7/273,  4/273,  1/273],
-    ///     ] as [[Float]])
+    ///     ] as [[Float16]])
     /// )
     /// ```
     ///

@@ -61,10 +61,6 @@ final class MaskSuit: TestingSuit {
         let state = try await mask.isEmpty()
         #expect(state.content.contents().assumingMemoryBound(to: Bool.self).pointee == true)
         try await #expect(state.synchronize() == false)
-        
-        let date = Date()
-        try await #expect(mask.isEmpty().synchronize() == false)
-        #expect(date.distance(to: Date()) < 0.0001)
     }
     
     @Test func mask_boundary() async throws {

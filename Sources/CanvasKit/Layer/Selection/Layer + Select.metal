@@ -11,23 +11,23 @@
 using namespace metal;
 
 
-kernel void layer_selectByVisible(texture2d<float, access::read>  layer,
-                                  texture2d<float, access::write> mask,
-                                  constant float& tolerance,
+kernel void layer_selectByVisible(texture2d<half, access::read>  layer,
+                                  texture2d<half, access::write> mask,
+                                  constant half& tolerance,
                                   uint2 position [[thread_position_in_grid]]) {
-    float4 color = layer.read(position);
+    half4 color = layer.read(position);
     if (color.a >= 1 - tolerance) {
         mask.write(1, position);
     }
 }
 
-kernel void layer_selectByColor(texture2d<float, access::read>  layer,
-                                texture2d<float, access::write> mask,
-                                constant float& tolerance,
+kernel void layer_selectByColor(texture2d<half, access::read>  layer,
+                                texture2d<half, access::write> mask,
+                                constant half& tolerance,
                                 constant PartialColor& target,
                                 uint2 position [[thread_position_in_grid]]) {
-    float4 color = layer.read(position);
-    float shouldSelect = 1;
+    half4 color = layer.read(position);
+    half shouldSelect = 1;
     
     for (int c = 0; c < 4; c++) {
         if (!target.presence[c]) continue;
@@ -43,14 +43,14 @@ kernel void layer_selectByColor(texture2d<float, access::read>  layer,
     }
 }
 
-kernel void layer_selectByPoint(texture2d<float, access::read>  layer,
-                                texture2d<float, access::write> mask,
-                                constant float& tolerance,
+kernel void layer_selectByPoint(texture2d<half, access::read>  layer,
+                                texture2d<half, access::write> mask,
+                                constant half& tolerance,
                                 constant uint2& point,
                                 uint2 position [[thread_position_in_grid]]) {
-    float4 color = layer.read(position);
-    float4 target = layer.read(point);
-    float shouldSelect = 1;
+    half4 color = layer.read(position);
+    half4 target = layer.read(point);
+    half shouldSelect = 1;
     
     for (int c = 0; c < 4; c++) {
         if (!shouldSelect) break;

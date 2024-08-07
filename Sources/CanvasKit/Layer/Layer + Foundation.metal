@@ -6,31 +6,31 @@
 using namespace metal;
 
 
-kernel void layer_duplicate(texture2d<float, access::read>  input,
-                            texture2d<float, access::write> output,
+kernel void layer_duplicate(texture2d<half, access::read>  input,
+                            texture2d<half, access::write> output,
                             uint2 position [[thread_position_in_grid]]) {
     
     output.write(input.read(position), position);
 }
 
-kernel void layer_duplicate_with_mask(texture2d<float, access::read>  input,
-                                      texture2d<float, access::write> output,
-                                      texture2d<float, access::read>  mask,
+kernel void layer_duplicate_with_mask(texture2d<half, access::read>  input,
+                                      texture2d<half, access::write> output,
+                                      texture2d<half, access::read>  mask,
                                       uint2 position [[thread_position_in_grid]]) {
-    float maskValue = mask.read(position)[0];
+    half maskValue = mask.read(position)[0];
     if (!maskValue) return;
     
     output.write(input.read(position), position);
 }
 
-kernel void layer_fill_with_mask(texture2d<float, access::read_write> layer,
-                                 texture2d<float, access::read> mask,
+kernel void layer_fill_with_mask(texture2d<half, access::read_write> layer,
+                                 texture2d<half, access::read> mask,
                                  constant PartialColor& color,
                                  uint2 position [[thread_position_in_grid]]) {
-    float maskValue = mask.read(position)[0];
+    half maskValue = mask.read(position)[0];
     if (!maskValue) return;
     
-    float4 target = layer.read(position);
+    half4 target = layer.read(position);
     
     for (int i = 0; i < 4; i++) {
         if (color.presence[i])
@@ -40,10 +40,10 @@ kernel void layer_fill_with_mask(texture2d<float, access::read_write> layer,
     layer.write(target, position);
 }
 
-kernel void layer_fill(texture2d<float, access::read_write> layer,
+kernel void layer_fill(texture2d<half, access::read_write> layer,
                        constant PartialColor& color,
                        uint2 position [[thread_position_in_grid]]) {
-    float4 target = layer.read(position);
+    half4 target = layer.read(position);
     
     for (int i = 0; i < 4; i++) {
         if (color.presence[i])
@@ -53,8 +53,8 @@ kernel void layer_fill(texture2d<float, access::read_write> layer,
     layer.write(target, position);
 }
 
-kernel void layer_expand(texture2d<float, access::read>  input  [[texture(0)]],
-                         texture2d<float, access::write> output [[texture(1)]],
+kernel void layer_expand(texture2d<half, access::read>  input  [[texture(0)]],
+                         texture2d<half, access::write> output [[texture(1)]],
                          constant DiscreteRect& rect,
                          uint2 position [[thread_position_in_grid]]) {
     int2 dest = int2(position) - rect.origin;
@@ -62,15 +62,15 @@ kernel void layer_expand(texture2d<float, access::read>  input  [[texture(0)]],
     if (dest.x < 0 || dest.y < 0 || dest.x >= rect.size.x || dest.y >= rect.size.y)
         return;
     
-    float4 pixelValue = input.read(position);
+    half4 pixelValue = input.read(position);
     output.write(pixelValue, uint2(dest));
 }
 
-kernel void layer_invert(texture2d<float, access::read_write> layer,
+kernel void layer_invert(texture2d<half, access::read_write> layer,
                          uint2 position [[thread_position_in_grid]]) {
-    float reference = 1;
+    half reference = 1;
     
-    float4 target = layer.read(position);
+    half4 target = layer.read(position);
     
     for (int i = 0; i < 3; i++) {
         target[i] = reference - target[i];
@@ -79,11 +79,11 @@ kernel void layer_invert(texture2d<float, access::read_write> layer,
     layer.write(target, position);
 }
 
-kernel void layer_subtract(texture2d<float, access::read_write> layer,
-                           texture2d<float, access::read>       other,
+kernel void layer_subtract(texture2d<half, access::read_write> layer,
+                           texture2d<half, access::read>       other,
                            uint2 position [[thread_position_in_grid]]) {
-    float4 target = layer.read(position);
-    float4 value  = other.read(position);
+    half4 target = layer.read(position);
+    half4 value  = other.read(position);
     
     if (value[3] != 0 && target[3] != 0) {
         for (int i = 0; i < 3; i++) {
@@ -94,13 +94,13 @@ kernel void layer_subtract(texture2d<float, access::read_write> layer,
     layer.write(target, position);
 }
 
-kernel void layer_convolution(texture2d<float, access::read> input,
-                              texture2d<float, access::write> output,
+kernel void layer_convolution(texture2d<half, access::read> input,
+                              texture2d<half, access::write> output,
                               device const float* _kernel,
                               constant int2& size,
                               constant uchar& layerIndexes,
                               uint2 position [[thread_position_in_grid]]) {
-    float4 sum = float4(0);
+    half4 sum = half4(0);
     
     int2 paddings = size / 2;
     
@@ -119,12 +119,12 @@ kernel void layer_convolution(texture2d<float, access::read> input,
                 _position[k] = _position[k] < texture_size[k] ? _position[k] : texture_size[k]  - 1;
             }
             
-            float4 color = input.read(uint2(_position));
-            sum += color * _kernel[j * size[0] + i];
+            half4 color = input.read(uint2(_position));
+            sum += color * half(_kernel[j * size[0] + i]);
         }
     }
     
-    float4 originalColor = input.read(position);
+    half4 originalColor = input.read(position);
     for (int z = 0; z < 4; z ++) {
         if ((layerIndexes & 1 << z) == 0)
             sum[z] = originalColor[z];
@@ -143,17 +143,17 @@ float lanczosWeight(float x, float lanczos_kernel) {
 }
 
 
-kernel void lanczosResample(texture2d<float, access::read>  input,
-                            texture2d<float, access::write> output,
+kernel void lanczosResample(texture2d<half, access::read>  input,
+                            texture2d<half, access::write> output,
                             uint2 output_position [[thread_position_in_grid]]) {
-    float lanczos_kernel = 2; // 2 or 3
+    int lanczos_kernel = 2; // 2 or 3
     
     int2 input_size  = int2(input.get_width(),  input.get_height());
     int2 output_size = int2(output.get_width(), output.get_height());
     
     float2 input_position_float = float2(output_position) * float2(input_size) / float2(output_size);
     int2 input_position = int2(input_position_float);
-    float4 totalColor = float4(0);
+    half4 totalColor = half4(0);
     float totalWeight = 0;
     
     for(int j = -lanczos_kernel; j < lanczos_kernel; j++) {
@@ -163,19 +163,20 @@ kernel void lanczosResample(texture2d<float, access::read>  input,
             int2 delta = int2(i, j);
             int2 pixel_position = min(max(input_position + delta, int2(0)), input_size - 1);
             
-            float4 color = input.read(uint2(pixel_position));
-            totalColor += color * weight;
+            half4 color = input.read(uint2(pixel_position));
+            totalColor += color * half(weight);
             
             totalWeight += weight;
         }
     }
     
-    float4 output_color = totalColor / totalWeight;
+    half4 output_color = totalColor / half(totalWeight);
+    
     output.write(output_color, output_position);
 }
 
-kernel void layer_duplicate_shift(texture2d<float, access::read>  input,
-                                  texture2d<float, access::write> output,
+kernel void layer_duplicate_shift(texture2d<half, access::read>  input,
+                                  texture2d<half, access::write> output,
                                   constant int2& shift,
                                   uint2 input_position [[thread_position_in_grid]]) {
     int2 output_position = int2(input_position) + shift;
@@ -185,6 +186,6 @@ kernel void layer_duplicate_shift(texture2d<float, access::read>  input,
     uint2 position = uint2(output_position);
     if (position.x > output.get_width() || position.y > output.get_height()) return;
     
-    float4 color = input.read(input_position);
+    half4 color = input.read(input_position);
     output.write(color, position);
 }

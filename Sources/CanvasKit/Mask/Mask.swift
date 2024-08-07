@@ -207,7 +207,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - uint8: The mask value. A value of zero would indicate not selected, while any none-zero value would indicate the given pixel is selected.
-    public convenience init(repeating float: Float = 0, width: Int, height: Int, context: MetalContext) async throws {
+    public convenience init(repeating float: Float16 = 0, width: Int, height: Int, context: MetalContext) async throws {
         let texture = Mask.makeTexture(width: width, height: height)
         
         try await MetalFunction(name: "mask_fill_with", bundle: .module)
