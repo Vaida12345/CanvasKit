@@ -46,11 +46,11 @@ public final class Canvas {
             encoder.setTexture(layer.texture, index: index)
         }
         
-        let originsBuffer = UnsafeMutableBufferPointer<Int32>.allocate(capacity: layers.count * 2)
+        let originsBuffer = UnsafeMutableBufferPointer<SIMD2<Int32>>.allocate(capacity: layers.count)
         
         for (index, layer) in self.layers.enumerated() {
-            originsBuffer.initializeElement(at: 2 * index, to: Int32(layer.origin.x.rounded(.toNearestOrAwayFromZero)))
-            originsBuffer.initializeElement(at: 2 * index + 1, to: Int32(layer.origin.y.rounded(.toNearestOrAwayFromZero)))
+            originsBuffer.initializeElement(at: index, to: SIMD2(Int32(layer.origin.x.rounded(.toNearestOrAwayFromZero)),
+                                                                 Int32(layer.origin.y.rounded(.toNearestOrAwayFromZero))))
         }
         let buffer = try device.makeBuffer(bytes: originsBuffer)
         originsBuffer.deallocate()
