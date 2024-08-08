@@ -138,8 +138,8 @@ public extension Layer {
     /// CGRect(origin: -origin_on_new_canvas, size: size)
     /// ```
     func expanding(to rect: CGRect) async throws -> Layer {
-        let width = Int(rect.width)
-        let height = Int(rect.height)
+        let width = Int(rect.width.rounded(.toNearestOrAwayFromZero))
+        let height = Int(rect.height.rounded(.toNearestOrAwayFromZero))
         
         let newLayer = Layer(width: width, height: height, origin: origin + rect.origin, colorSpace: colorSpace, context: context)
         newLayer.texture.label = "Layer.Texture<(\(width), \(height))>(expandOf: \(self.texture.label ?? "(unknown)"), by: \(rect))"
@@ -147,8 +147,8 @@ public extension Layer {
         try await MetalFunction(name: "layer_expand", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
-            .argument(bytes: DiscreteRect(rect))
-            .dispatch(to: self.context, width: self.width, height: self.height)
+            .argument(bytes: SIMD2<Float>(Float(rect.origin.x), Float(rect.origin.y)))
+            .dispatch(to: self.context, width: width, height: height)
         
         return newLayer
     }
@@ -204,6 +204,8 @@ public extension Layer {
     /// ```
     ///
     /// - Tip: Due to the nature of such algorithm, subtracting an empty layer is the same as subtracting a black layer.
+    ///
+    /// - Warning: This will not take the origin into account.
     func subtract(_ other: Layer) async throws {
         precondition(self.size == other.size, "The two layers need to be of equal size to enable subtraction.")
         
@@ -260,13 +262,16 @@ public extension Layer {
     ///
     /// - Note: By returning a new layer, the current layer is unmodified.
     func resized(to size: CGSize) async throws -> Layer {
-        let newLayer = Layer(width: Int(size.width), height: Int(size.height), origin: self.origin, colorSpace: self.colorSpace, context: self.context)
+        let width = Int(size.width.rounded(.toNearestOrAwayFromZero))
+        let height = Int(size.height.rounded(.toNearestOrAwayFromZero))
+        
+        let newLayer = Layer(width: width, height: height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
         newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(resizeOf: \(self.texture.label ?? "(unknown)"))"
         
         try await MetalFunction(name: "lanczosResample", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
-            .dispatch(to: self.context, width: Int(size.width), height: Int(size.height))
+            .dispatch(to: self.context, width: width, height: height)
         
         return newLayer
     }

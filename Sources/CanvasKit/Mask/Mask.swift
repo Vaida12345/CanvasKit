@@ -15,6 +15,8 @@ import OSLog
 /// An immutable mask.
 ///
 /// This container is tightly bound to the underlying texture. Its texture is allocated on creation, and the texture, including its content, cannot be changed.
+///
+/// Each pixel is an `UInt8` representing from clear color, 0, to fully masked, 1.
 public final class Mask: LayerProtocol, @unchecked Sendable {
     
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
@@ -136,8 +138,8 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     /// CGRect(origin: -origin_on_new_canvas, size: size)
     /// ```
     public func expanding(to rect: CGRect) async throws -> Mask {
-        let width = Int(rect.width)
-        let height = Int(rect.height)
+        let width = Int(rect.width.rounded(.toNearestOrAwayFromZero))
+        let height = Int(rect.height.rounded(.toNearestOrAwayFromZero))
         
         let newTexture = Mask.makeTexture(width: width, height: height)
         newTexture.label = "Mask.Texture<(\(width), \(height))>(expandOf: \(self.texture.label ?? "(unknown)"), by: \(rect))"
@@ -145,10 +147,10 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await MetalFunction(name: "mask_expand", bundle: .module)
             .argument(texture: self.texture)
             .argument(texture: newTexture)
-            .argument(bytes: DiscreteRect(rect))
-            .dispatch(to: self.context, width: self.width, height: self.height)
+            .argument(bytes: SIMD2<Float>(Float(rect.origin.x), Float(rect.origin.y)))
+            .dispatch(to: self.context, width: width, height: height)
         
-        return Mask(texture: newTexture, context: self.context)
+        return Mask(texture: newTexture, context: self.context, _isEmpty: self._isEmpty)
     }
     
     /// Crop the Mask.
@@ -182,13 +184,33 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await self.expanding(to: rect)
     }
     
+    /// Quantize the mask to 0 or 255.
+    ///
+    /// - Parameters:
+    ///   - threshold: If pixel value is greater than `threshold`, the pixel is set to 255.
+    public func quantized(threshold: Float16) async throws -> Mask {
+        let newTexture = Mask.makeTexture(width: self.width, height: self.height)
+        
+        try await MetalFunction(name: "mask_quantize", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newTexture)
+            .argument(bytes: threshold)
+            .dispatch(to: self.context, width: self.width, height: self.height)
+        
+        newTexture.label = "Mask.Texture<(\(width), \(height))>(quantizedFrom: \(self.texture.label ?? "(unknown)"))"
+        return Mask(texture: newTexture, context: self.context, _isEmpty: self._isEmpty, _boundary: self._boundary)
+    }
+    
     public func render() async throws -> CGImage {
         try await self.makeTexture().makeCGImage(channelsCount: 1, colorSpace: CGColorSpaceCreateDeviceGray(), bitmapInfo: .none)
     }
     
-    init(texture: any MTLTexture, context: MetalContext) {
+    init(texture: any MTLTexture, context: MetalContext, _isEmpty: MetalDependentState<Bool>? = nil, _boundary: CGRect? = nil) {
         self.texture = texture
         self.context = context
+        
+        self._isEmpty = _isEmpty
+        self._boundary = _boundary
     }
     
     static func makeTexture(width: Int, height: Int) -> any MTLTexture {

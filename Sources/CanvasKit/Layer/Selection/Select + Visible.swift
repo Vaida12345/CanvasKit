@@ -10,15 +10,12 @@ import MetalManager
 
 public struct SelectByVisible: SelectionCriteria {
     
-    let tolerance: Float16
-    
     public func select(layer: Layer) async throws -> Mask {
         let texture = Mask.makeTexture(width: layer.width, height: layer.height)
         
         try await MetalFunction(name: "layer_selectByVisible", bundle: .module)
             .argument(texture: layer.texture)
             .argument(texture: texture)
-            .argument(bytes: tolerance)
             .dispatch(to: layer.context, width: layer.width, height: layer.height)
         
         return Mask(texture: texture, context: layer.context)
@@ -29,11 +26,11 @@ public struct SelectByVisible: SelectionCriteria {
 
 public extension SelectionCriteria where Self == SelectByVisible {
     
-    /// The tolerance of 0 would only select pixels with alpha 255.
+    /// Select by visible.
     ///
-    /// The default tolerance is 254, ie, all pixels with non-zero alpha would be selected.
-    static func visible(tolerance: Float16 = 0.95) -> SelectionCriteria {
-        SelectByVisible(tolerance: tolerance)
+    /// This will copy the alpha layer to the mask.
+    static func visible() -> SelectionCriteria {
+        SelectByVisible()
     }
     
 }

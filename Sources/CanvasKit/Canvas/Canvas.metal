@@ -9,12 +9,12 @@
 using namespace metal;
 
 struct SingleTexture {
-    texture2d<half, access::read> texture;
+    texture2d<half, access::sample> texture;
 };
 
 kernel void canvas_make_texture(
     device SingleTexture* textures,
-    device int2 *origins,
+    device float2 *origins,
     constant int& textureCount,
     texture2d<half, access::write> output,
     uint2 position [[thread_position_in_grid]]
@@ -26,12 +26,17 @@ kernel void canvas_make_texture(
     half4 alpha = half4(0);
     
     for (int i = 0; i < textureCount; i++) {
-        int2 target_position = int2(position) - origins[i];
+        float2 target_position = float2(position) - origins[i];
         
-        if (target_position.x < 0 || target_position.y < 0 || target_position.x > int(textures[i].texture.get_width()) || target_position.y > int(textures[i].texture.get_height()))
-            continue;
+        if (target_position.x < 0 || target_position.y < 0) continue;
         
-        half4 newColor = textures[i].texture.read(uint2(target_position));
+        float2 size = float2(textures[i].texture.get_width(), textures[i].texture.get_height());
+        target_position /= size;
+        
+        if (target_position.x > 1|| target_position.y > 1) continue;
+        
+        
+        half4 newColor = textures[i].texture.sample(sampler(filter::linear), target_position);
         half newAlpha = newColor[3];
         
         for (int c = 0; c < 3; c++) {

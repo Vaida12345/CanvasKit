@@ -37,6 +37,8 @@ public extension SelectionCriteria where Self == SelectByColor {
     ///
     /// - Parameters:
     ///   - color: If a component is `nil`, that criteria is ignored.
+    ///
+    /// - Returns: A mask quantized to 0 or 255.
     static func color(_ color: PartialColor, tolerance: Float16 = 0.01) -> SelectByColor {
         SelectByColor(color: color, tolerance: tolerance)
     }

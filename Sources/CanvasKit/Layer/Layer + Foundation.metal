@@ -20,7 +20,7 @@ kernel void layer_duplicate_with_mask(texture2d<half, access::read>  input,
     half maskValue = mask.read(position)[0];
     if (!maskValue) return;
     
-    output.write(input.read(position), position);
+    output.write(input.read(position) * maskValue, position);
 }
 
 kernel void layer_fill_with_mask(texture2d<half, access::read_write> layer,
@@ -37,7 +37,7 @@ kernel void layer_fill_with_mask(texture2d<half, access::read_write> layer,
             target[i] = color.components[i];
     }
     
-    layer.write(target, position);
+    layer.write(target * maskValue, position);
 }
 
 kernel void layer_fill(texture2d<half, access::read_write> layer,
@@ -53,17 +53,22 @@ kernel void layer_fill(texture2d<half, access::read_write> layer,
     layer.write(target, position);
 }
 
-kernel void layer_expand(texture2d<half, access::read>  input  [[texture(0)]],
-                         texture2d<half, access::write> output [[texture(1)]],
-                         constant DiscreteRect& rect,
-                         uint2 position [[thread_position_in_grid]]) {
-    int2 dest = int2(position) - rect.origin;
+kernel void layer_expand(texture2d<half, access::sample>  input  [[texture(0)]],
+                         texture2d<half, access::write>   output [[texture(1)]],
+                         constant float2& origin,
+                         uint2 dest [[thread_position_in_grid]]) {
+    float2 source = float2(dest) + origin;
     
-    if (dest.x < 0 || dest.y < 0 || dest.x >= rect.size.x || dest.y >= rect.size.y)
-        return;
+    if (source.x < 0 || source.y < 0) return;
     
-    half4 pixelValue = input.read(position);
-    output.write(pixelValue, uint2(dest));
+    float2 size = float2(input.get_width(), input.get_height());
+    source /= size;
+    
+    if (source.x > 1 || source.y > 1) return;
+    
+    
+    half4 pixelValue = input.sample(sampler(filter::linear), source);
+    output.write(pixelValue, dest);
 }
 
 kernel void layer_invert(texture2d<half, access::read_write> layer,
@@ -143,27 +148,26 @@ float lanczosWeight(float x, float lanczos_kernel) {
 }
 
 
-kernel void lanczosResample(texture2d<half, access::read>  input,
+kernel void lanczosResample(texture2d<half, access::sample>  input,
                             texture2d<half, access::write> output,
                             uint2 output_position [[thread_position_in_grid]]) {
     int lanczos_kernel = 2; // 2 or 3
     
-    int2 input_size  = int2(input.get_width(),  input.get_height());
-    int2 output_size = int2(output.get_width(), output.get_height());
+    float2 input_size  = float2(input.get_width(),  input.get_height());
+    float2 output_size = float2(output.get_width(), output.get_height());
     
-    float2 input_position_float = float2(output_position) * float2(input_size) / float2(output_size);
-    int2 input_position = int2(input_position_float);
+    float2 input_position = float2(output_position) * input_size / output_size;
     half4 totalColor = half4(0);
     float totalWeight = 0;
     
     for(int j = -lanczos_kernel; j < lanczos_kernel; j++) {
         for(int i = -lanczos_kernel; i < lanczos_kernel; i++) {
-            float weight = lanczosWeight(float(i) - (input_position_float.x - float(input_position.x)), lanczos_kernel)
-                         * lanczosWeight(float(j) - (input_position_float.y - float(input_position.y)), lanczos_kernel);
-            int2 delta = int2(i, j);
-            int2 pixel_position = min(max(input_position + delta, int2(0)), input_size - 1);
+            float weight = lanczosWeight(float(i) - (input_position.x - float(input_position.x)), lanczos_kernel)
+                         * lanczosWeight(float(j) - (input_position.y - float(input_position.y)), lanczos_kernel);
+            float2 delta = float2(i, j);
+            float2 pixel_position = min(max(input_position + delta, float2(0)), input_size - 1);
             
-            half4 color = input.read(uint2(pixel_position));
+            half4 color = input.sample(sampler(filter::linear), pixel_position / input_size);
             totalColor += color * half(weight);
             
             totalWeight += weight;

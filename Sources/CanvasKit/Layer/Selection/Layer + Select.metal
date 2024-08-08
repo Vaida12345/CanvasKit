@@ -13,12 +13,9 @@ using namespace metal;
 
 kernel void layer_selectByVisible(texture2d<half, access::read>  layer,
                                   texture2d<half, access::write> mask,
-                                  constant half& tolerance,
                                   uint2 position [[thread_position_in_grid]]) {
     half4 color = layer.read(position);
-    if (color.a >= 1 - tolerance) {
-        mask.write(1, position);
-    }
+    mask.write(color.a, position);
 }
 
 kernel void layer_selectByColor(texture2d<half, access::read>  layer,

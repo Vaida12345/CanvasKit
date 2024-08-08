@@ -66,15 +66,32 @@ kernel void mask_duplicate_inverse(texture2d<half, access::read>  input  [[textu
 }
 
 
-kernel void mask_expand(texture2d<half, access::read>  input  [[texture(0)]],
-                        texture2d<half, access::write> output [[texture(1)]],
-                        constant DiscreteRect& rect,
-                        uint2 position [[thread_position_in_grid]]) {
-    int2 dest = int2(position) - rect.origin;
+kernel void mask_expand(texture2d<half, access::sample>  input  [[texture(0)]],
+                        texture2d<half, access::write>   output [[texture(1)]],
+                        constant float2& origin,
+                        uint2 dest [[thread_position_in_grid]]) {
+    float2 source = float2(dest) + origin;
     
-    if (dest.x < 0 || dest.y < 0 || dest.x >= rect.size.x || dest.y >= rect.size.y)
-        return;
+    if (source.x < 0 || source.y < 0) return;
     
-    half pixelValue = input.read(position).r;
-    output.write(pixelValue, uint2(dest));
+    float2 size = float2(input.get_width(), input.get_height());
+    source /= size;
+    
+    if (source.x > 1 || source.y > 1) return;
+    
+    
+    half pixelValue = input.sample(sampler(filter::linear), source).r;
+    output.write(pixelValue, dest);
+}
+
+
+kernel void mask_quantize(texture2d<half, access::read>  input  [[texture(0)]],
+                          texture2d<half, access::write> output [[texture(1)]],
+                          constant half& tolerance,
+                          uint2 position [[thread_position_in_grid]]) {
+    half value = input.read(position).r;
+    
+    if (value > tolerance) {
+        output.write(1, position);
+    }
 }
