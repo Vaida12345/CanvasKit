@@ -126,8 +126,25 @@ final class Layer_Foundation: TestingSuit {
         let layer = try await Layer(makeSampleCGImage(), context: context)
         try await layer.fill(.white.opacity(nil))
         
+        let simple_layer = try await Layer(fill: .green, width: 193, height: 193, context: context)
+        
         let resize_large = try await layer.resized(to: CGSize(width: 400, height: 200))
         let resize_small = try await layer.resized(to: CGSize(width: 20, height: 20))
+        
+        let resize_simple_large = try await simple_layer.resized(to: CGSize(width: 400, height: 200))
+        let resize_simple_small = try await simple_layer.resized(to: CGSize(width: 20, height: 20))
+        
+        try await writeAndCompare(
+            layer: resize_simple_large,
+            folder: "layer_resize",
+            name: "resize_simple_large.png"
+        )
+        
+        try await writeAndCompare(
+            layer: resize_simple_small,
+            folder: "layer_resize",
+            name: "resize_simple_small.png"
+        )
         
         try await writeAndCompare(
             layer: resize_large,

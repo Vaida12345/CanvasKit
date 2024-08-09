@@ -148,8 +148,8 @@ float lanczosWeight(float x, float lanczos_kernel) {
 }
 
 
-kernel void lanczosResample(texture2d<half, access::sample>  input,
-                            texture2d<half, access::write> output,
+kernel void lanczosResample(texture2d<half, access::sample> input,
+                            texture2d<half, access::write>  output,
                             uint2 output_position [[thread_position_in_grid]]) {
     int lanczos_kernel = 2; // 2 or 3
     
@@ -162,9 +162,10 @@ kernel void lanczosResample(texture2d<half, access::sample>  input,
     
     for(int j = -lanczos_kernel; j < lanczos_kernel; j++) {
         for(int i = -lanczos_kernel; i < lanczos_kernel; i++) {
-            float weight = lanczosWeight(float(i) - (input_position.x - float(input_position.x)), lanczos_kernel)
-                         * lanczosWeight(float(j) - (input_position.y - float(input_position.y)), lanczos_kernel);
             float2 delta = float2(i, j);
+            
+            float weight = lanczosWeight(delta.x, float(lanczos_kernel))
+                         * lanczosWeight(delta.y, float(lanczos_kernel));
             float2 pixel_position = min(max(input_position + delta, float2(0)), input_size - 1);
             
             half4 color = input.sample(sampler(filter::linear), pixel_position / input_size);
