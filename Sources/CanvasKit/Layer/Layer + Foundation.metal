@@ -1,5 +1,6 @@
 
 #include <metal_stdlib>
+#include "../Structures/Util.h"
 #include "../Structures/Utilities/PartialColor.h"
 #include "../Structures/Utilities/DiscreteRect.h"
 
@@ -59,15 +60,10 @@ kernel void layer_expand(texture2d<half, access::sample>  input  [[texture(0)]],
                          uint2 dest [[thread_position_in_grid]]) {
     float2 source = float2(dest) + origin;
     
-    if (source.x < 0 || source.y < 0) return;
-    
-    float2 size = float2(input.get_width(), input.get_height());
-    source /= size;
-    
-    if (source.x > 1 || source.y > 1) return;
+    if (source.x < 0 || source.y < 0 || source.x > float(input.get_width()) || source.y > float(input.get_height())) return;
     
     
-    half4 pixelValue = input.sample(sampler(filter::linear), source);
+    half4 pixelValue = texture_sample_at(input, source);
     output.write(pixelValue, dest);
 }
 
@@ -142,9 +138,8 @@ kernel void layer_convolution(texture2d<half, access::read> input,
 // Define a utility function to calculate the Lanczos kernel weight.
 float lanczosWeight(float x, float lanczos_kernel) {
     if (x == 0.0) return 1.0;
-    if (abs(x) >= lanczos_kernel) return 0.0;
     float pi_x = 3.14159265358979323846 * x;
-    return lanczos_kernel * sin(pi_x) * sin(pi_x / float(lanczos_kernel)) / (pi_x * pi_x);
+    return lanczos_kernel * sin(pi_x) * sin(pi_x / lanczos_kernel) / (pi_x * pi_x);
 }
 
 
@@ -166,9 +161,10 @@ kernel void lanczosResample(texture2d<half, access::sample> input,
             
             float weight = lanczosWeight(delta.x, float(lanczos_kernel))
                          * lanczosWeight(delta.y, float(lanczos_kernel));
+            
             float2 pixel_position = min(max(input_position + delta, float2(0)), input_size - 1);
             
-            half4 color = input.sample(sampler(filter::linear), pixel_position / input_size);
+            half4 color = texture_sample_at(input, pixel_position);
             totalColor += color * half(weight);
             
             totalWeight += weight;

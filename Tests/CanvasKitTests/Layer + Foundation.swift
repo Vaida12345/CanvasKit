@@ -127,12 +127,13 @@ final class Layer_Foundation: TestingSuit {
         try await layer.fill(.white.opacity(nil))
         
         let simple_layer = try await Layer(fill: .green, width: 193, height: 193, context: context)
+        try await simple_layer.fill(.red, selection: Mask(width: 193, height: 193, selecting: CGRect(x: 1, y: 1, width: 191, height: 191), context: context))
         
-        let resize_large = try await layer.resized(to: CGSize(width: 400, height: 200))
-        let resize_small = try await layer.resized(to: CGSize(width: 20, height: 20))
-        
-        let resize_simple_large = try await simple_layer.resized(to: CGSize(width: 400, height: 200))
+        let resize_simple_large = try await simple_layer.resized(to: CGSize(width: 193 * 2, height: 193))
         let resize_simple_small = try await simple_layer.resized(to: CGSize(width: 20, height: 20))
+        
+        let resize_large = try await layer.resized(to: CGSize(width: 193 * 2, height: 193*2))
+        let resize_small = try await layer.resized(to: CGSize(width: 21, height: 21))
         
         try await writeAndCompare(
             layer: resize_simple_large,

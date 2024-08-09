@@ -1,6 +1,8 @@
 
 #include <metal_stdlib>
+#include "../Structures/Util.h"
 #include "../Structures/Utilities/DiscreteRect.h"
+
 using namespace metal;
 
 kernel void mask_fill_with(texture2d<half, access::write> texture,
@@ -72,15 +74,9 @@ kernel void mask_expand(texture2d<half, access::sample>  input  [[texture(0)]],
                         uint2 dest [[thread_position_in_grid]]) {
     float2 source = float2(dest) + origin;
     
-    if (source.x < 0 || source.y < 0) return;
+    if (source.x < 0 || source.y < 0 || source.x > float(input.get_width()) || source.y > float(input.get_height())) return;
     
-    float2 size = float2(input.get_width(), input.get_height());
-    source /= size;
-    
-    if (source.x > 1 || source.y > 1) return;
-    
-    
-    half pixelValue = input.sample(sampler(filter::linear), source).r;
+    half pixelValue = texture_sample_at(input, source).r;
     output.write(pixelValue, dest);
 }
 

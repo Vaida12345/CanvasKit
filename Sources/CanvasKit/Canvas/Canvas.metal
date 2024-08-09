@@ -6,6 +6,8 @@
 //
 
 #include <metal_stdlib>
+#include "../Structures/Util.h"
+
 using namespace metal;
 
 struct SingleTexture {
@@ -28,15 +30,10 @@ kernel void canvas_make_texture(
     for (int i = 0; i < textureCount; i++) {
         float2 target_position = float2(position) - origins[i];
         
-        if (target_position.x < 0 || target_position.y < 0) continue;
+        if (target_position.x < 0 || target_position.y < 0 || target_position.x > float(textures[i].texture.get_width()) || target_position.y > float(textures[i].texture.get_height()))
+            continue;
         
-        float2 size = float2(textures[i].texture.get_width(), textures[i].texture.get_height());
-        target_position /= size;
-        
-        if (target_position.x > 1|| target_position.y > 1) continue;
-        
-        
-        half4 newColor = textures[i].texture.sample(sampler(filter::linear), target_position);
+        half4 newColor = texture_sample_at(textures[i].texture, target_position);
         half newAlpha = newColor[3];
         
         for (int c = 0; c < 3; c++) {
