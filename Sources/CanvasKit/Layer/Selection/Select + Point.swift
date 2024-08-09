@@ -15,7 +15,7 @@ public struct SelectByColorFromPoint: SelectionCriteria {
     
     let index: Index
     
-    let tolerance: Float16
+    let tolerance: Float
     
     let contiguous: Bool
     
@@ -78,7 +78,7 @@ public extension SelectionCriteria where Self == SelectByColorFromPoint {
     /// Select by the color at given point.
     ///
     /// - Complexity: This will synchronize the context when `contiguous`.
-    static func color(at point: CGPoint, tolerance: Float16 = 0.1, contiguous: Bool = true) -> SelectByColorFromPoint {
+    static func color(at point: CGPoint, tolerance: Float = 0.1, contiguous: Bool = true) -> SelectByColorFromPoint {
         return SelectByColorFromPoint(index: Index(point), tolerance: tolerance, contiguous: contiguous)
     }
     

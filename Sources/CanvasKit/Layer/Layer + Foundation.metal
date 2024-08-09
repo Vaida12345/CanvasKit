@@ -35,10 +35,26 @@ kernel void layer_fill_with_mask(texture2d<half, access::read_write> layer,
     
     for (int i = 0; i < 4; i++) {
         if (color.presence[i])
-            target[i] = color.components[i];
+            target[i] = half(color.components[i]);
     }
     
     layer.write(target * maskValue, position);
+}
+
+kernel void layer_fill_with_rect(texture2d<half, access::read_write> layer,
+                                 constant uint2& origin,
+                                 constant PartialColor& color,
+                                 uint2 position [[thread_position_in_grid]]) {
+    uint2 target_position = position + origin;
+    
+    half4 target = half4(0);
+    
+    for (int i = 0; i < 4; i++) {
+        if (color.presence[i])
+            target[i] = half(color.components[i]);
+    }
+    
+    layer.write(target, target_position);
 }
 
 kernel void layer_fill(texture2d<half, access::read_write> layer,
@@ -48,7 +64,7 @@ kernel void layer_fill(texture2d<half, access::read_write> layer,
     
     for (int i = 0; i < 4; i++) {
         if (color.presence[i])
-            target[i] = color.components[i];
+            target[i] = half(color.components[i]);
     }
     
     layer.write(target, position);
@@ -189,4 +205,16 @@ kernel void layer_duplicate_shift(texture2d<half, access::read>  input,
     
     half4 color = input.read(input_position);
     output.write(color, position);
+}
+
+kernel void layer_duplicate_shift_float(texture2d<half, access::sample> input,
+                                        texture2d<half, access::write>  output,
+                                        constant float2& shift,
+                                        uint2 output_position [[thread_position_in_grid]]) {
+    float2 input_position = float2(output_position) - shift;
+    
+    if (input_position.x < 0 || input_position.y < 0 || input_position.x > float(input.get_width()) || input_position.y > float(input.get_height())) return;
+    
+    half4 color = texture_sample_at(input, input_position);
+    output.write(color, output_position);
 }

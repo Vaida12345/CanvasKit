@@ -92,6 +92,27 @@ public extension Layer {
     /// Fill the area masked by `mask` by the `color`.
     ///
     /// If a channel is `nil`, that channel is unmodified.
+    ///
+    /// - Parameters:
+    ///   - color: The filled color
+    ///   - rect: The rect will be quantized to the nearest integer.
+    func fill(_ color: PartialColor, selection rect: CGRect) async throws {
+        let width = Int(rect.width.rounded(.toNearestOrAwayFromZero))
+        let height = Int(rect.height.rounded(.toNearestOrAwayFromZero))
+        
+        let origin = SIMD2<UInt32>(UInt32(rect.origin.x.rounded(.toNearestOrAwayFromZero)), UInt32(rect.origin.y.rounded(.toNearestOrAwayFromZero)))
+        print("__marker__", origin)
+        
+        try await MetalFunction(name: "layer_fill_with_rect", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(bytes: origin)
+            .argument(bytes: color)
+            .dispatch(to: self.context, width: width, height: height)
+    }
+    
+    /// Fill the area masked by `mask` by the `color`.
+    ///
+    /// If a channel is `nil`, that channel is unmodified.
     func fill(_ color: PartialColor) async throws {
         try await MetalFunction(name: "layer_fill", bundle: .module)
             .argument(texture: self.texture)
@@ -102,7 +123,7 @@ public extension Layer {
     /// Fill the area masked by `mask` by the `color`.
     ///
     /// If a channel is `nil`, that channel is unmodified.
-    func fill(red: Float16?, green: Float16?, blue: Float16?, alpha: Float16?, selection: Mask? = nil) async throws {
+    func fill(red: Float?, green: Float?, blue: Float?, alpha: Float?, selection: Mask? = nil) async throws {
         let color = PartialColor(red: red, green: green, blue: blue, alpha: alpha)
         
         if let selection {
@@ -236,7 +257,7 @@ public extension Layer {
     ///         [7/273, 26/273, 41/273, 26/273,  7/273],
     ///         [4/273, 16/273, 26/273, 16/273,  4/273],
     ///         [1/273,  4/273,  7/273,  4/273,  1/273],
-    ///     ] as [[Float16]])
+    ///     ] as [[Float]])
     /// )
     /// ```
     ///
@@ -296,7 +317,23 @@ public extension Layer {
             .argument(texture: self.texture)
             .argument(texture: newLayer.texture)
             .argument(bytes: SIMD2<Int32>(Int32(x), Int32(y)))
-            .dispatch(to: self.context, width: Int(size.width), height: Int(size.height))
+            .dispatch(to: self.context, width: self.width, height: self.height)
+        
+        return newLayer
+    }
+    
+    /// Shift the underlying texture.
+    ///
+    /// Please note that by shifting the layer, some pixels may be discarded. The new regions will be filled with ``PartialColor/clear``.
+    func shifted(x: some BinaryFloatingPoint, y: some BinaryFloatingPoint) async throws -> Layer {
+        let newLayer = Layer(width: self.width, height: self.height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
+        newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(shiftedFrom: \(self.texture.label ?? "(unknown)"))"
+        
+        try await MetalFunction(name: "layer_duplicate_shift_float", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: newLayer.texture)
+            .argument(bytes: SIMD2<Float>(Float(x), Float(y)))
+            .dispatch(to: self.context, width: self.width, height: self.height)
         
         return newLayer
     }

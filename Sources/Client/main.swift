@@ -46,7 +46,6 @@ for i in 0..<10 {
             canvas.add(layer: focusLayer)
             
             var shadow = Layer(frame: CGRect(center: focusLayer.frame.center, size: CGSize(width: 400, height: 400)), context: context)
-            shadow.origin -= CGPoint(x: 0, y: 0.5)
             
             let expandedFocus = try await focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: shadow.size)).invert()
             

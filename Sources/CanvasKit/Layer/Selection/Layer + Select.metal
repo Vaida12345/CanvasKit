@@ -20,7 +20,7 @@ kernel void layer_selectByVisible(texture2d<half, access::read>  layer,
 
 kernel void layer_selectByColor(texture2d<half, access::read>  layer,
                                 texture2d<half, access::write> mask,
-                                constant half& tolerance,
+                                constant float& tolerance,
                                 constant PartialColor& target,
                                 uint2 position [[thread_position_in_grid]]) {
     half4 color = layer.read(position);
@@ -30,7 +30,7 @@ kernel void layer_selectByColor(texture2d<half, access::read>  layer,
         if (!target.presence[c]) continue;
         if (!shouldSelect) break;
         
-        if (abs(color[c] - target.components[c]) > tolerance) {
+        if (abs(float(color[c]) - target.components[c]) > tolerance) {
             shouldSelect = 0;
         }
     }
@@ -42,7 +42,7 @@ kernel void layer_selectByColor(texture2d<half, access::read>  layer,
 
 kernel void layer_selectByPoint(texture2d<half, access::read>  layer,
                                 texture2d<half, access::write> mask,
-                                constant half& tolerance,
+                                constant float& tolerance,
                                 constant uint2& point,
                                 uint2 position [[thread_position_in_grid]]) {
     half4 color = layer.read(position);
@@ -52,7 +52,7 @@ kernel void layer_selectByPoint(texture2d<half, access::read>  layer,
     for (int c = 0; c < 4; c++) {
         if (!shouldSelect) break;
         
-        if (abs(color[c] - target[c]) > tolerance) {
+        if (abs(color[c] - target[c]) > float(tolerance)) {
             shouldSelect = 0;
         }
     }

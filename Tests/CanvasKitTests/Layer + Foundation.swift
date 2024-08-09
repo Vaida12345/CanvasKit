@@ -121,13 +121,28 @@ final class Layer_Foundation: TestingSuit {
     }
     
     @Test
+    func layer_fill() async throws {
+        let context = MetalContext()
+        
+        let simple_layer = try await Layer(fill: .green, width: 193, height: 193, context: context)
+        try await simple_layer.fill(.red, selection: CGRect(x: 1, y: 1, width: 191, height: 191))
+        
+        try await writeAndCompare(
+            layer: simple_layer,
+            folder: "layer_fill",
+            name: "layer_fill.png"
+        )
+        
+    }
+    
+    @Test
     func layer_resize() async throws {
         let context = MetalContext()
         let layer = try await Layer(makeSampleCGImage(), context: context)
         try await layer.fill(.white.opacity(nil))
         
         let simple_layer = try await Layer(fill: .green, width: 193, height: 193, context: context)
-        try await simple_layer.fill(.red, selection: Mask(width: 193, height: 193, selecting: CGRect(x: 1, y: 1, width: 191, height: 191), context: context))
+        try await simple_layer.fill(.red, selection: CGRect(x: 1, y: 1, width: 191, height: 191))
         
         let resize_simple_large = try await simple_layer.resized(to: CGSize(width: 193 * 2, height: 193))
         let resize_simple_small = try await simple_layer.resized(to: CGSize(width: 20, height: 20))
@@ -165,12 +180,16 @@ final class Layer_Foundation: TestingSuit {
         let context = MetalContext()
         let layer = try await Layer(makeSampleCGImage(), context: context)
         
-        let newLayer = try await layer.shifted(x: 10, y: 10)
-        
         try await writeAndCompare(
-            layer: newLayer,
+            layer: try await layer.shifted(x: 5, y: 5),
             folder: "layer_shifted",
             name: "layer_shifted.png"
+        )
+        
+        try await writeAndCompare(
+            layer: try await layer.shifted(x: 5 as Float, y: 5),
+            folder: "layer_shifted",
+            name: "layer_shifted_float.png"
         )
     }
     

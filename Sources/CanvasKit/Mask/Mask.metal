@@ -6,9 +6,9 @@
 using namespace metal;
 
 kernel void mask_fill_with(texture2d<half, access::write> texture,
-                           constant half& fill,
+                           constant float& fill,
                            uint2 position [[thread_position_in_grid]]) {
-    texture.write(fill, position);
+    texture.write(half(fill), position);
 }
 
 
@@ -83,11 +83,11 @@ kernel void mask_expand(texture2d<half, access::sample>  input  [[texture(0)]],
 
 kernel void mask_quantize(texture2d<half, access::read>  input  [[texture(0)]],
                           texture2d<half, access::write> output [[texture(1)]],
-                          constant half& tolerance,
+                          constant float& tolerance,
                           uint2 position [[thread_position_in_grid]]) {
     half value = input.read(position).r;
     
-    if (value > tolerance) {
+    if (value > half(tolerance)) {
         output.write(1, position);
     }
 }

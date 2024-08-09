@@ -12,7 +12,7 @@ public struct SelectByColor: SelectionCriteria {
     
     let color: PartialColor
     
-    let tolerance: Float16
+    let tolerance: Float
     
     
     public func select(layer: Layer) async throws -> Mask {
@@ -39,7 +39,7 @@ public extension SelectionCriteria where Self == SelectByColor {
     ///   - color: If a component is `nil`, that criteria is ignored.
     ///
     /// - Returns: A mask quantized to 0 or 255.
-    static func color(_ color: PartialColor, tolerance: Float16 = 0.01) -> SelectByColor {
+    static func color(_ color: PartialColor, tolerance: Float = 0.01) -> SelectByColor {
         SelectByColor(color: color, tolerance: tolerance)
     }
     
