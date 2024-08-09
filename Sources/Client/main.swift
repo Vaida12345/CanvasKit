@@ -5,6 +5,7 @@
 //  Created by Vaida on 7/10/24.
 //
 
+#if os(macOS)
 import Stratum
 import CanvasKit
 import AppKit
@@ -90,3 +91,4 @@ for i in 0..<10 {
     
     try await layer.render().write(to: destination.appending(path: "blend \(i).png"))
 }
+#endif
