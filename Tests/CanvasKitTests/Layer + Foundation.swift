@@ -13,6 +13,7 @@ import CanvasKit
 import Stratum
 @testable
 import MetalManager
+import AppKit
 
 
 extension Tag {
@@ -133,6 +134,19 @@ final class Layer_Foundation: TestingSuit {
             name: "layer_fill.png"
         )
         
+        
+        let configuration = NSImage.SymbolConfiguration(pointSize: 400, weight: .regular, scale: .large)
+        let image = NSImage(systemSymbolName: "building.columns.fill", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
+        var focusLayer = try await Layer(image, context: context)
+        focusLayer = try await focusLayer.cropping(to: focusLayer.select().boundary())
+        
+        try await focusLayer.fill(red: 0.5, green: 0.1, blue: 0.9, alpha: nil)
+        
+        try await writeAndCompare(
+            layer: focusLayer,
+            folder: "layer_fill",
+            name: "library_fill.png"
+        )
     }
     
     @Test
