@@ -21,12 +21,8 @@ extension Layer {
     /// - Parameters:
     ///   - origin: The point relative to the canvas.
     public convenience init(_ image: CGImage, origin: CGPoint = .zero, context: MetalContext) async throws {
-        let device = measure("make compute device") {
-            CanvasKitConfiguration.computeDevice
-        }
-        let texture = try await measure("make texture") {
-            try await device.makeTexture(from: image, usage: .shaderReadWrite, context: context)
-        }
+        let device = CanvasKitConfiguration.computeDevice
+        let texture = try await device.makeTexture(from: image, usage: .shaderReadWrite, context: context)
         
         self.init(texture: texture, origin: origin, colorSpace: image.colorSpace!, context: context)
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"

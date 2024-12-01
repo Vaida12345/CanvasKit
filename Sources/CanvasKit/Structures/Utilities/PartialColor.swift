@@ -75,16 +75,6 @@ public struct PartialColor: Equatable, Sendable {
         self.presence = SIMD4(red_presence, green_presence, blue_presence, alpha_presence)
     }
     
-    public init(_ color: SwiftUI.Color) {
-        let color = color.animatableData
-        self.init(
-            red: Float(color[0]),
-            green: Float(color[1]),
-            blue: Float(color[2]),
-            alpha: Float(color[3])
-        )
-    }
-    
     public static let white = PartialColor(red: 1, green: 1, blue: 1, alpha: 1)
     public static let black = PartialColor(red: 0, green: 0, blue: 0, alpha: 1)
     public static let clear = PartialColor(red: 0, green: 0, blue: 0, alpha: 0)
