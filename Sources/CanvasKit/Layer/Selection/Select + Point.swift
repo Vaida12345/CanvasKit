@@ -9,6 +9,7 @@ import Stratum
 import Metal
 import MetalManager
 import CoreGraphics
+import Optimization
 
 
 public struct SelectByColorFromPoint: SelectionCriteria {
@@ -45,8 +46,8 @@ public struct SelectByColorFromPoint: SelectionCriteria {
         let maskBuffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: maskLength)
         maskBuffer.initialize(repeating: 0)
         
-        var queue = Queue<Index>()
-        queue.enqueue(index)
+        var queue = RingBuffer<Index>()
+        queue.append(index)
         
         let isVisited = BoolMatrix(width: layer.width, height: layer.height, fill: false)
         
@@ -57,7 +58,7 @@ public struct SelectByColorFromPoint: SelectionCriteria {
                 
                 for adjacent in next.adjacent(width: layer.width, height: layer.height) {
                     if !isVisited[adjacent] && originalMaskBuffer[adjacent.flatten(width: width)] != 0 {
-                        queue.enqueue(adjacent)
+                        queue.append(adjacent)
                     }
                 }
             }

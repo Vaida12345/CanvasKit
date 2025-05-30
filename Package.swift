@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "CanvasKit",
-    platforms: [.macOS(.v13), .iOS(.v16)],
+    platforms: [.macOS(.v15), .iOS(.v18), .visionOS(.v2)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
@@ -13,17 +13,16 @@ let package = Package(
             targets: ["CanvasKit"]),
     ],
     dependencies: [
-        .package(name: "MetalManager",
-                 path: "~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/MetalManager"),
-        .package(name: "Stratum",
-                 path: "~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/Stratum")
+        .package(name: "MetalManager", path: "~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/MetalManager"),
+        .package(name: "Stratum", path: "~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/Stratum"),
+        .package(name: "Optimization", path: "~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/Optimization")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "CanvasKit",
-            dependencies: ["MetalManager", "Stratum"]
+            dependencies: ["MetalManager", "Stratum", "Optimization"]
         ),
         .testTarget(
             name: "CanvasKitTests",

@@ -75,6 +75,16 @@ public struct PartialColor: Equatable, Sendable {
         self.presence = SIMD4(red_presence, green_presence, blue_presence, alpha_presence)
     }
     
+    public init(_ color: SwiftUI.Color) {
+        let color = color.components
+        self.init(
+            red: Float(color[0]),
+            green: Float(color[1]),
+            blue: Float(color[2]),
+            alpha: Float(color[3])
+        )
+    }
+    
     public static let white = PartialColor(red: 1, green: 1, blue: 1, alpha: 1)
     public static let black = PartialColor(red: 0, green: 0, blue: 0, alpha: 1)
     public static let clear = PartialColor(red: 0, green: 0, blue: 0, alpha: 0)
@@ -82,4 +92,22 @@ public struct PartialColor: Equatable, Sendable {
     public static let red   = PartialColor(red: 1, green: 0, blue: 0, alpha: 1)
     public static let green = PartialColor(red: 0, green: 1, blue: 0, alpha: 1)
     public static let blue  = PartialColor(red: 0, green: 0, blue: 1, alpha: 1)
+}
+
+
+private extension Color {
+    
+    /// The components of the color.
+    ///
+    /// Layout in `[red, green, blue, alpha]`.
+    public var components: [Double] {
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
+        let color = NSColor(self).usingColorSpace(.displayP3)!
+        return [color.redComponent, color.greenComponent, color.blueComponent, color.alphaComponent]
+#elseif canImport(UIKit)
+        let color = UIColor(self).cgColor.converted(to: CGColorSpace(name: CGColorSpace.displayP3)!, intent: .defaultIntent, options: nil)!
+        return color.components!.map { Double($0) }
+#endif
+    }
+    
 }
