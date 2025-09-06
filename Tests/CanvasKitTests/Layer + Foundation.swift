@@ -155,7 +155,7 @@ final class Layer_Foundation: TestingSuit {
         
         do {
             let simple_layer = Layer(width: 193, height: 193, context: context)
-            try await simple_layer.fill(LinearGradient(startColor: .black, endColor: .white, direction: .horizontal))
+            try await simple_layer.fill(LinearGradient(start: .black, end: .white, direction: .horizontal))
             
             try await writeAndCompare(
                 layer: simple_layer,
@@ -166,7 +166,7 @@ final class Layer_Foundation: TestingSuit {
         
         do {
             let simple_layer = Layer(width: 193, height: 193, context: context)
-            try await simple_layer.fill(LinearGradient(startColor: .black, endColor: .white, direction: .vertical))
+            try await simple_layer.fill(LinearGradient(start: .black, end: .white, direction: .vertical))
             
             try await writeAndCompare(
                 layer: simple_layer,
@@ -174,6 +174,24 @@ final class Layer_Foundation: TestingSuit {
                 name: "vertical.png"
             )
         }
+    }
+    
+    @Test
+    func layer_fill_gradient_with_mask() async throws {
+        let context = MetalContext()
+        
+        let configuration = NSImage.SymbolConfiguration(pointSize: 400, weight: .regular, scale: .large)
+        let image = NSImage(systemSymbolName: "building.columns.fill", accessibilityDescription: nil)!.withSymbolConfiguration(configuration)!.cgImage!
+        let mask = try await Layer(image, context: context).select()
+        
+        let simple_layer = Layer(width: 1362, height: 1242, context: context)
+        try await simple_layer.fill(LinearGradient(start: .black, end: .white, direction: .vertical), selection: mask)
+        
+        try await writeAndCompare(
+            layer: simple_layer,
+            folder: "layer_fill_gradient_with_mask",
+            name: "vertical.png"
+        )
     }
     
     @Test

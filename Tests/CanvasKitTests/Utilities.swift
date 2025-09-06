@@ -76,10 +76,15 @@ class TestingSuit {
         let logger = Logger(subsystem: "CanvasKit", category: "Testing")
         let date = Date()
         try await layer.render().write(to: result)
+        try #require(result.exists)
         logger.info("TestingSuit.writeAndCompare, render took \(date.distanceToNow())")
-        
-        #expect(try result.contentsEqual(to: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/\(self.folder())/\(folder)/\(name)"), "Check \"\(folder + "/" + result.name)\" in the Temp folder.")
-        try result.remove()
+    
+        let reference = "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/\(self.folder())/\(folder)/\(name)"
+        let isEqual = try result.contentsEqual(to: FinderItem(at: reference))
+        #expect(isEqual, "Check \"\(result)\"")
+        if isEqual {
+            try result.remove()
+        }
     }
     
     init() async {

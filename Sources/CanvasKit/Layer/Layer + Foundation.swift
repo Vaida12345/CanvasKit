@@ -133,6 +133,24 @@ public extension Layer {
             .dispatch(to: self.context, width: self.width, height: self.height)
     }
     
+    /// Fill the area by masked `gradient`.
+    ///
+    /// If a channel is `nil`, that channel is unmodified.
+    ///
+    /// The gradient is defined in the `selection`'s visible local space.
+    func fill(_ gradient: LinearGradient, selection: Mask) async throws {
+        precondition(selection.size == self.size, "Attempting to apply a mask to an layer of different size. Tip: You can use `Mask.expanding(to:)` to expand or shrink the mask.")
+        
+        let boundary = try await DiscreteRect(selection.boundary())
+        
+        try await MetalFunction(name: "layer_fill_linear_gradient_with_mask", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: selection.texture)
+            .argument(bytes: gradient)
+            .argument(bytes: boundary)
+            .dispatch(to: self.context, width: self.width, height: self.height)
+    }
+    
     /// Fill the area masked by `mask` by the `color`.
     ///
     /// If a channel is `nil`, that channel is unmodified.

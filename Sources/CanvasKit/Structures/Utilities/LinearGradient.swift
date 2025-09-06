@@ -15,6 +15,15 @@ public struct LinearGradient: Equatable, Sendable {
     public let direction: Direction
     
     
+    public init(start: PartialColor, end: PartialColor, direction: Direction) {
+        precondition(start.presence == end.presence)
+        
+        self.startColor = start
+        self.endColor = end
+        self.direction = direction
+    }
+    
+    
     public enum Direction: UInt8, Equatable, Sendable {
         case horizontal, vertical
     }

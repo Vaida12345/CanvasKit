@@ -42,6 +42,30 @@ kernel void layer_fill_with_mask(texture2d<half, access::read_write> layer,
     layer.write(target * maskValue, position);
 }
 
+kernel void layer_fill_linear_gradient_with_mask(texture2d<half, access::read_write> layer,
+                                                 texture2d<half, access::read> mask,
+                                                 constant LinearGradient& gradient,
+                                                 constant DiscreteRect& boundary,
+                                                 uint2 position [[thread_position_in_grid]]) {
+    half maskValue = mask.read(position)[0];
+    if (!maskValue) return;
+    
+    half4 target = layer.read(position);
+    
+    int d = int(gradient.direction);
+    
+    for (int i = 0; i < 4; i++) {
+        if (!gradient.startColor.presence[i]) continue;
+        if (int(position[d]) < boundary.origin[d]) continue;
+        if (int(position[d]) > boundary.origin[d] + boundary.size[d]) continue;
+        
+        float progress = float(position[d] - boundary.origin[d]) / float(boundary.size[d]);
+        target[i] = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
+    }
+    
+    layer.write(target, position);
+}
+
 kernel void layer_fill_with_rect(texture2d<half, access::read_write> layer,
                                  constant uint2& origin,
                                  constant PartialColor& color,
@@ -75,21 +99,14 @@ kernel void layer_fill_linear_gradient(texture2d<half, access::read_write> layer
                                        constant LinearGradient& gradient,
                                        uint2 position [[thread_position_in_grid]]) {
     half4 target = layer.read(position);
+    float2 size = float2(layer.get_width(), layer.get_height());
     
-    if (gradient.direction == 0) { // horizontal
-        for (int i = 0; i < 4; i++) {
-            if (!gradient.startColor.presence[i]) continue;
-            
-            float progress = float(position.x) / float(layer.get_width());
-            target[i] = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
-        }
-    } else {
-        for (int i = 0; i < 4; i++) {
-            if (!gradient.startColor.presence[i]) continue;
-            
-            float progress = float(position.y) / float(layer.get_height());
-            target[i] = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
-        }
+    int d = int(gradient.direction);
+    for (int i = 0; i < 4; i++) {
+        if (!gradient.startColor.presence[i]) continue;
+        
+        float progress = float(position[d]) / size[d];
+        target[i] = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
     }
     
     layer.write(target, position);
