@@ -8,7 +8,7 @@
 import CoreGraphics
 import MetalManager
 import Metal
-import Stratum
+import NativeImage
 
 
 /// A canvas, made up of images.

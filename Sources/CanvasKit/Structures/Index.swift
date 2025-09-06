@@ -5,7 +5,7 @@
 //  Created by Vaida on 7/5/24.
 //
 
-import Stratum
+import Essentials
 import CoreGraphics
 
 

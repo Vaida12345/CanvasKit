@@ -100,7 +100,7 @@ private extension Color {
     /// The components of the color.
     ///
     /// Layout in `[red, green, blue, alpha]`.
-    public var components: [Double] {
+    var components: [Double] {
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
         let color = NSColor(self).usingColorSpace(.displayP3)!
         return [color.redComponent, color.greenComponent, color.blueComponent, color.alphaComponent]

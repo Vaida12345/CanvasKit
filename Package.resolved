@@ -1,0 +1,78 @@
+{
+  "originHash" : "ae9a58ac9119290c6231a17459b67a7049490ab97039e0bad2eb066b2c719cd4",
+  "pins" : [
+    {
+      "identity" : "concurrentstream",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/ConcurrentStream.git",
+      "state" : {
+        "revision" : "5b38deff93bc99abea5abfcd5290772d935cec78",
+        "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "detaileddescription",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/DetailedDescription.git",
+      "state" : {
+        "revision" : "d4ae923e6cc5dadc7219d54cbf31912889f7bf33",
+        "version" : "2.1.1"
+      }
+    },
+    {
+      "identity" : "essentials",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/Essentials.git",
+      "state" : {
+        "revision" : "fbdd9396c66cb4057c61c8119e31d688e55ddfb1",
+        "version" : "1.1.5"
+      }
+    },
+    {
+      "identity" : "finderitem",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/FinderItem.git",
+      "state" : {
+        "revision" : "8bdd169de0ea5439e31606fd8186c0b480b46e68",
+        "version" : "1.2.3"
+      }
+    },
+    {
+      "identity" : "matrix",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/Matrix.git",
+      "state" : {
+        "revision" : "b8fc5bd08ab640e4f7e693522a430017afcd92f8",
+        "version" : "1.0.9"
+      }
+    },
+    {
+      "identity" : "metalmanager",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/MetalManager.git",
+      "state" : {
+        "revision" : "f40531d6ce677460b0d5cf1fb3968e8bee1293c0",
+        "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "nativeimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/NativeImage.git",
+      "state" : {
+        "revision" : "85534ff1cf306ed9e674c5dc782dd0ca8bda423d",
+        "version" : "1.0.3"
+      }
+    },
+    {
+      "identity" : "optimization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Vaida12345/Optimization.git",
+      "state" : {
+        "revision" : "bcfac7079a3a159647a2e96aafa1fe3d1cdfdb3c",
+        "version" : "1.0.11"
+      }
+    }
+  ],
+  "version" : 3
+}

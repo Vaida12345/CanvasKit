@@ -5,7 +5,7 @@
 //  Created by Vaida on 7/5/24.
 //
 
-import Stratum
+
 import Metal
 import MetalManager
 import CoreGraphics
@@ -46,7 +46,7 @@ public struct SelectByColorFromPoint: SelectionCriteria {
         let maskBuffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: maskLength)
         maskBuffer.initialize(repeating: 0)
         
-        var queue = RingBuffer<Index>()
+        let queue = RingBuffer<Index>()
         queue.append(index)
         
         let isVisited = BoolMatrix(width: layer.width, height: layer.height, fill: false)

@@ -9,7 +9,7 @@ import Testing
 import Foundation
 @testable
 import CanvasKit
-import Stratum
+
 @testable
 import MetalManager
 

@@ -8,7 +8,7 @@
 import Testing
 import CoreGraphics
 import AppKit
-import Stratum
+
 import CanvasKit
 import OSLog
 import MetalManager
