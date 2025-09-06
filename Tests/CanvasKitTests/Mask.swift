@@ -36,13 +36,13 @@ final class MaskSuit: TestingSuit {
         )
         
         try await writeAndCompare(
-            layer: Mask(repeating: 1, width: 100, height: 100, context: MetalContext()),
+            layer: Mask(repeating: 255, width: 100, height: 100, context: MetalContext()),
             folder: "mask_init_fill",
             name: "mask_fill_full.png"
         )
         
         try await writeAndCompare(
-            layer: Mask(repeating: 0.5, width: 100, height: 100, context: MetalContext()),
+            layer: Mask(repeating: 255/2, width: 100, height: 100, context: MetalContext()),
             folder: "mask_init_fill",
             name: "mask_fill_half.png"
         )

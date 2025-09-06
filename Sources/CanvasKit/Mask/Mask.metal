@@ -6,9 +6,9 @@
 using namespace metal;
 
 kernel void mask_fill_with(texture2d<half, access::write> texture,
-                           constant float& fill,
+                           constant char& fill,
                            uint2 position [[thread_position_in_grid]]) {
-    texture.write(half(fill), position);
+    texture.write(half(fill) / 255, position);
 }
 
 
@@ -40,7 +40,7 @@ kernel void mask_check_full_zeros(texture2d<half, access::read> texture [[textur
     
     // Check if the pixel is non-zero
     if (pixelValue != 0) {
-        // Atomic update to indicate that a non-zero value is found
+        // only write is to set it to false, hence no racing
         *result = false;
     }
 }

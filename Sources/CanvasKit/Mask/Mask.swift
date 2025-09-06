@@ -16,7 +16,9 @@ import OSLog
 ///
 /// This container is tightly bound to the underlying texture. Its texture is allocated on creation, and the texture, including its content, cannot be changed.
 ///
-/// Each pixel is an `UInt8` representing from clear color, 0, to fully masked, 1.
+/// Each pixel is an `UInt8` representing from clear color, 0, to fully masked, 255.
+///
+/// On `Swift` end, each pixel is an `UInt8`, while on `MSL`, each pixel is a `half` ranging from 0 to 1.
 public final class Mask: LayerProtocol, @unchecked Sendable {
     
     /// Each pixel would take one byte. It is a waste, but could avoid metal data racing.
@@ -39,8 +41,10 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         CGSize(width: width, height: height)
     }
     
+    /// Is fully zero.
     private var _isEmpty: MetalDependentState<Bool>? = nil
     
+    /// Is fully zero.
     public func isEmpty() async throws -> MetalDependentState<Bool> {
         if let _isEmpty { return _isEmpty }
         
@@ -70,7 +74,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     /// ```
     /// the boundary is `CGRect(x: 1, y: 1, width: 2, height: 2)`.
     ///
-    /// - Complexity: **Calling this method would synchronize the context.** One could have chosen to return a MetalDependentState, and calculate the rect when required. But that would not make any differences. The return boundary is mainly used by the CPU to compute the actual size of the buffer, and create new buffers out of it. One way or another, the CPU must know the size of the boundary to allocate the textures.
+    /// - Complexity: **Calling this method would synchronize the context.** One could have chosen to return a `MetalDependentState`, and calculate the rect when required. But that would not make any differences. The return boundary is mainly used by the CPU to compute the actual size of the buffer, and create new buffers out of it. One way or another, the CPU must know the size of the boundary to allocate the textures.
     public func boundary() async throws -> CGRect {
         if let _boundary { return _boundary }
         
@@ -184,7 +188,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         try await self.expanding(to: rect)
     }
     
-    /// Quantize the mask to 0 or 255.
+    /// Quantize the mask.
     ///
     /// - Parameters:
     ///   - threshold: If pixel value is greater than `threshold`, the pixel is set to 255.
@@ -229,12 +233,12 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - uint8: The mask value. A value of zero would indicate not selected, while any none-zero value would indicate the given pixel is selected.
-    public convenience init(repeating float: Float = 0, width: Int, height: Int, context: MetalContext) async throws {
+    public convenience init(repeating uint8: UInt8 = 0, width: Int, height: Int, context: MetalContext) async throws {
         let texture = Mask.makeTexture(width: width, height: height)
         
         try await MetalFunction(name: "mask_fill_with", bundle: .module)
             .argument(texture: texture)
-            .argument(bytes: float)
+            .argument(bytes: uint8)
             .dispatch(to: context, width: width, height: height)
         
         texture.label = "Mask.Texture<(\(width), \(height))>(origin: \(#function))"
