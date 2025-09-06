@@ -10,7 +10,7 @@ import Testing
 import Foundation
 @testable
 import CanvasKit
-
+import NativeImage
 @testable
 import MetalManager
 import AppKit
@@ -147,6 +147,33 @@ final class Layer_Foundation: TestingSuit {
             folder: "layer_fill",
             name: "library_fill.png"
         )
+    }
+    
+    @Test
+    func layer_fill_gradient() async throws {
+        let context = MetalContext()
+        
+        do {
+            let simple_layer = Layer(width: 193, height: 193, context: context)
+            try await simple_layer.fill(LinearGradient(startColor: .black, endColor: .white, direction: .horizontal))
+            
+            try await writeAndCompare(
+                layer: simple_layer,
+                folder: "layer_fill_gradient",
+                name: "horizontal.png"
+            )
+        }
+        
+        do {
+            let simple_layer = Layer(width: 193, height: 193, context: context)
+            try await simple_layer.fill(LinearGradient(startColor: .black, endColor: .white, direction: .vertical))
+            
+            try await writeAndCompare(
+                layer: simple_layer,
+                folder: "layer_fill_gradient",
+                name: "vertical.png"
+            )
+        }
     }
     
     @Test

@@ -3,6 +3,7 @@
 #include "../Structures/Util.h"
 #include "../Structures/Utilities/PartialColor.h"
 #include "../Structures/Utilities/DiscreteRect.h"
+#include "../Structures/Utilities/LinearGradient.h"
 
 using namespace metal;
 
@@ -65,6 +66,30 @@ kernel void layer_fill(texture2d<half, access::read_write> layer,
     for (int i = 0; i < 4; i++) {
         if (color.presence[i])
             target[i] = half(color.components[i]);
+    }
+    
+    layer.write(target, position);
+}
+
+kernel void layer_fill_linear_gradient(texture2d<half, access::read_write> layer,
+                                       constant LinearGradient& gradient,
+                                       uint2 position [[thread_position_in_grid]]) {
+    half4 target = layer.read(position);
+    
+    if (gradient.direction == 0) { // horizontal
+        for (int i = 0; i < 4; i++) {
+            if (!gradient.startColor.presence[i]) continue;
+            
+            float progress = float(position.x) / float(layer.get_width());
+            target[i] = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
+        }
+    } else {
+        for (int i = 0; i < 4; i++) {
+            if (!gradient.startColor.presence[i]) continue;
+            
+            float progress = float(position.y) / float(layer.get_height());
+            target[i] = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
+        }
     }
     
     layer.write(target, position);

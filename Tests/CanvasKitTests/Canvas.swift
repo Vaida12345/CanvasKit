@@ -9,7 +9,8 @@ import Testing
 import Foundation
 @testable
 import CanvasKit
-
+import Matrix
+import NativeImage
 @testable
 import MetalManager
 import AppKit

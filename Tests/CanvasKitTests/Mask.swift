@@ -9,10 +9,11 @@ import Testing
 import Foundation
 @testable
 import CanvasKit
-
+import NativeImage
 @testable
 import MetalManager
 import OSLog
+import Essentials
 
 
 extension Tag {
@@ -85,9 +86,7 @@ final class MaskSuit: TestingSuit {
     @Test func mask_expand() async throws {
         let logger = Logger(subsystem: "CanvasKit", category: "Testing")
         
-        let context = measure("make context") {
-            MetalContext()
-        }
+        let context = MetalContext()
         
         let date = Date()
         let mask = try await Mask(repeating: 255, width: 100, height: 100, context: context)

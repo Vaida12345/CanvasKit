@@ -8,10 +8,11 @@
 import Testing
 import CoreGraphics
 import AppKit
-
+import NativeImage
 import CanvasKit
 import OSLog
 import MetalManager
+import FinderItem
 
 
 func makeSampleCGImage() -> CGImage {
@@ -77,7 +78,7 @@ class TestingSuit {
         try await layer.render().write(to: result)
         logger.info("TestingSuit.writeAndCompare, render took \(date.distanceToNow())")
         
-        try #require(result.contentsEqual(to: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/\(self.folder())/\(folder)/\(name)"), "Check \"\(folder + "/" + result.name)\" in the Temp folder.")
+        #expect(try result.contentsEqual(to: "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/\(self.folder())/\(folder)/\(name)"), "Check \"\(folder + "/" + result.name)\" in the Temp folder.")
         try result.remove()
     }
     

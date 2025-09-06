@@ -111,13 +111,25 @@ public extension Layer {
             .dispatch(to: self.context, width: width, height: height)
     }
     
-    /// Fill the area masked by `mask` by the `color`.
+    /// Fill the area by `color`.
     ///
     /// If a channel is `nil`, that channel is unmodified.
     func fill(_ color: PartialColor) async throws {
         try await MetalFunction(name: "layer_fill", bundle: .module)
             .argument(texture: self.texture)
             .argument(bytes: color)
+            .dispatch(to: self.context, width: self.width, height: self.height)
+    }
+    
+    /// Fill the area by `gradient`.
+    ///
+    /// If a channel is `nil`, that channel is unmodified.
+    func fill(_ gradient: LinearGradient) async throws {
+        precondition(gradient.startColor.presence == gradient.endColor.presence)
+        
+        try await MetalFunction(name: "layer_fill_linear_gradient", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(bytes: gradient)
             .dispatch(to: self.context, width: self.width, height: self.height)
     }
     
