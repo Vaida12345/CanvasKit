@@ -12,7 +12,11 @@ public struct LinearGradient: Equatable, Sendable {
     
     public let endColor: PartialColor
     
-    public let direction: Direction
+    let _direction: SIMD4<Int32> // for alignment
+    
+    public var direction: Direction {
+        Direction(rawValue: _direction[0])!
+    }
     
     
     public init(start: PartialColor, end: PartialColor, direction: Direction) {
@@ -20,11 +24,11 @@ public struct LinearGradient: Equatable, Sendable {
         
         self.startColor = start
         self.endColor = end
-        self.direction = direction
+        self._direction = .init(direction.rawValue, 0, 0, 0)
     }
     
     
-    public enum Direction: UInt8, Equatable, Sendable {
+    public enum Direction: Int32, Equatable, Sendable {
         case horizontal, vertical
     }
 }

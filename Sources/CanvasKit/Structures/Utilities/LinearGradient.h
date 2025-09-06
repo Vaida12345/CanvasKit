@@ -14,7 +14,8 @@
 struct LinearGradient {
     PartialColor startColor;
     PartialColor endColor;
-    uint8_t direction;
+    int direction;
+    int _padding[3];
 };
 
 #endif /* LinearGradient_h */
