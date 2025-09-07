@@ -18,7 +18,7 @@ import NativeImage
 /// A canvas does not contain size information, it only provides a coordinate space. All layer's `origin` are relative to the same coordinate space. In the coordinate space of `CanvasKit`, the origin lies on the top-left corner.
 public final class Canvas {
     
-    /// The newer layers are on top.
+    /// ordered from bottom to top.
     public var layers: [Layer]
     
     
@@ -69,6 +69,7 @@ public final class Canvas {
         return resultLayer
     }
     
+    /// Insert a layer at the top
     public func add(layer: Layer, at index: Int? = nil) {
         if let index {
             self.layers.insert(layer, at: index)
@@ -81,6 +82,7 @@ public final class Canvas {
         self.layers[index] = newLayer
     }
     
+    /// - layers: ordered from bottom to top.
     public init(layers: [Layer] = []) {
         self.layers = layers
     }

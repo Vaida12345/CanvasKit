@@ -73,6 +73,30 @@ final class Canvas_Tests: TestingSuit {
     }
     
     @Test
+    func blend_with_alpha() async throws {
+        let context = MetalContext()
+        
+        let alpha_layer = Layer(width: 5, height: 2, context: context)
+        try await alpha_layer.fill(.white.opacity(1), selection: CGRect(x: 0, y: 0, width: 1, height: 1))
+        try await alpha_layer.fill(.white.opacity(0.75), selection: CGRect(x: 1, y: 0, width: 1, height: 1))
+        try await alpha_layer.fill(.white.opacity(0.5), selection: CGRect(x: 2, y: 0, width: 1, height: 1))
+        try await alpha_layer.fill(.white.opacity(0.25), selection: CGRect(x: 3, y: 0, width: 1, height: 1))
+        try await alpha_layer.fill(.white.opacity(0), selection: CGRect(x: 4, y: 0, width: 1, height: 1))
+        
+        let blue_layer = Layer(width: 5, height: 2, context: context)
+        try await blue_layer.fill(.blue)
+        
+        let canvas = Canvas(layers: [blue_layer, alpha_layer])
+        let layer = try await canvas.makeLayer(width: 5, height: 2, context: context)
+        
+        try await writeAndCompare(
+            layer: layer,
+            folder: "canvas_blend",
+            name: "blend_with_alpha.png"
+        )
+    }
+    
+    @Test
     func test_advanced_blend_1() async throws {
         let focusRect = CGRect(x: 333, y: 376, width: 359, height: 359)
         let context = MetalContext()

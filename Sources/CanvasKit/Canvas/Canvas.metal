@@ -15,45 +15,52 @@ struct SingleTexture {
 };
 
 kernel void canvas_make_texture(
-    device SingleTexture* textures,
-    device float2 *origins,
-    constant int& textureCount,
-    texture2d<half, access::write> output,
-    uint2 position [[thread_position_in_grid]]
+    device const SingleTexture*  textures      [[ buffer(0) ]],
+    device const float2*         origins       [[ buffer(1) ]],
+    constant uint&               textureCount  [[ buffer(2) ]],
+    texture2d<half, access::write> output      [[ texture(0) ]],
+    uint2                        position      [[ thread_position_in_grid ]]
 ) {
-//    texture.write(textures[2].texture.read(position), position);
-//    return;
+    // Accumulator in premultiplied space:
+    half3 accumColor = half3(0.0);
+    half  accumAlpha = 0.0;
     
-    half4 color = half4(0); // last component empty
-    half4 alpha = half4(0);
-    
-    for (int i = 0; i < textureCount; i++) {
-        float2 target_position = float2(position) - origins[i];
+    // Loop over each layer
+    for (uint i = 0; i < textureCount; i++) {
+        // Compute the corresponding texel in layer i
+        float2 localPos = float2(position) - origins[i];
         
-        if (target_position.x < 0 || target_position.y < 0 || target_position.x > float(textures[i].texture.get_width()) || target_position.y > float(textures[i].texture.get_height()))
+        // Cull out-of-bounds
+        if (localPos.x < 0.0 ||
+            localPos.y < 0.0 ||
+            localPos.x >= float(textures[i].texture.get_width())  ||
+            localPos.y >= float(textures[i].texture.get_height()))
+        {
             continue;
-        
-        half4 newColor = texture_sample_at(textures[i].texture, target_position);
-        half newAlpha = newColor[3];
-        
-        for (int c = 0; c < 3; c++) {
-            half oldAlpha = alpha[c];
-            
-            half newComponent = newColor[c];
-            half oldComponent = color[c];
-            
-            half resultAlpha = newAlpha + oldAlpha * (1 - newAlpha);
-            if (resultAlpha == 0) continue;
-            
-            half resultComponent = (newComponent * newAlpha + oldComponent * oldAlpha * (1 - newAlpha)) / resultAlpha;
-            
-            color[c] = resultComponent;
-            alpha[c] = resultAlpha;
         }
+        
+        // Read the layer’s RGBA
+        half4 src = texture_sample_at(textures[i].texture, localPos);
+        
+        half3 srcRGB       = src.rgb;
+        half  srcAlpha     = src.a;
+        
+        // Convert to premultiplied
+        half3 srcRGB_pm    = srcRGB * srcAlpha;
+        
+        // Standard Porter-Duff "over" composite:
+        // out_pm.rgb   = src_pm + dst_pm * (1 - src_a)
+        // out_alpha    = src_a + dst_a * (1 - src_a)
+        accumColor       = srcRGB_pm + accumColor * (1.0 - srcAlpha);
+        accumAlpha       = srcAlpha + accumAlpha * (1.0 - srcAlpha);
     }
     
-    half resultAlpha = max(alpha[0], max(alpha[1], alpha[2]));
-    color[3] = resultAlpha;
+    // Un-premultiply (so we end up with normal RGBA again)
+    half3 finalRGB = (accumAlpha > 0.0)
+    ? accumColor / accumAlpha
+    : half3(0.0);
     
-    output.write(color, position);
+    half4 outColor = half4(finalRGB, accumAlpha);
+    
+    output.write(outColor, position);
 }
