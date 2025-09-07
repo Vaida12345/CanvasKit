@@ -94,7 +94,7 @@ final class Canvas_Tests: TestingSuit {
         try await shadow.fill(PartialColor(red: 1, green: 1, blue: 1, alpha: 43 / 255))
         try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), selection: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: shadow.size)).invert())
         
-        shadow = try await shadow.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 27, distribution: 21), components: .alpha)
+        shadow = try await shadow.convolution(kernel: .gaussianBlur(radius: 13, distribution: 21), components: .alpha)
         canvas.add(layer: shadow)
         
         let layer = try await canvas.makeLayer(width: 1024, height: 1024, context: context)
@@ -129,7 +129,7 @@ final class Canvas_Tests: TestingSuit {
         try await shadow.fill(PartialColor(red: 1, green: 1, blue: 1, alpha: 43 / 255))
         try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), selection: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: shadow.size)).invert())
         
-        shadow = try await shadow.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 27, distribution: 21), components: .alpha)
+        shadow = try await shadow.convolution(kernel: .gaussianBlur(radius: 13, distribution: 21), components: .alpha)
         try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), selection: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: CGSize(width: 400, height: 400))))
         canvas.add(layer: shadow)
         

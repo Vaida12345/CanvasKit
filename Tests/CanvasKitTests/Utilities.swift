@@ -80,7 +80,7 @@ class TestingSuit {
         logger.info("TestingSuit.writeAndCompare, render took \(date.distanceToNow())")
     
         let reference = "/Users/vaida/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/CanvasKit/Tests/CanvasKitTests/Resources/\(self.folder())/\(folder)/\(name)"
-        let isEqual = try result.contentsEqual(to: FinderItem(at: reference))
+        let isEqual = (try? result.contentsEqual(to: FinderItem(at: reference))) ?? false
         #expect(isEqual, "Check \"\(result)\"")
         if isEqual {
             try result.remove()

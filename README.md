@@ -63,7 +63,7 @@ try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), s
 A small matrix convolution to give it a bit of blur.
 
 ```swift
-shadow = try await shadow.convolution(kernel: Matrix<Float>.gaussianBlurKernel(size: 27, distribution: 21), components: .alpha)
+shadow = try await shadow.convolution(kernel: .gaussianBlur(radius: 13, distribution: 21), components: .alpha)
 try await shadow.fill(PartialColor(red: nil, green: nil, blue: nil, alpha: 0), selection: focusSelection.expanding(to: CGRect(center: focusSelection.size.center, size: CGSize(width: 400, height: 400))))
 canvas.add(layer: shadow)
 ```

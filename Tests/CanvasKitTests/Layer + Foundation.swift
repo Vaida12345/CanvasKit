@@ -105,8 +105,8 @@ final class Layer_Foundation: TestingSuit {
         let layer = try await Layer(makeSampleCGImage(), context: context)
         try await layer.fill(.white.opacity(nil))
         
-        let conv_1x1 = try await layer.convolution(kernel: .gaussianBlurKernel(size: 1, distribution: 1))
-        let conv_3x3 = try await layer.convolution(kernel: .gaussianBlurKernel(size: 3, distribution: 3))
+        let conv_1x1 = try await layer.convolution(kernel: .gaussianBlur(radius: 0, distribution: 1))
+        let conv_3x3 = try await layer.convolution(kernel: .gaussianBlur(radius: 1, distribution: 3))
         
         try await writeAndCompare(
             layer: conv_1x1,

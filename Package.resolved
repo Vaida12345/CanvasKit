@@ -1,5 +1,5 @@
 {
-  "originHash" : "ae9a58ac9119290c6231a17459b67a7049490ab97039e0bad2eb066b2c719cd4",
+  "originHash" : "339fed6aeb827fc582110a20ed769da10a65cdad75221d19d42cb2d40cbce685",
   "pins" : [
     {
       "identity" : "concurrentstream",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Vaida12345/FinderItem.git",
       "state" : {
-        "revision" : "8bdd169de0ea5439e31606fd8186c0b480b46e68",
-        "version" : "1.2.3"
+        "revision" : "5456f831e325313a44814e5b19beafd434b12b7f",
+        "version" : "1.2.4"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Vaida12345/Matrix.git",
       "state" : {
-        "revision" : "b8fc5bd08ab640e4f7e693522a430017afcd92f8",
-        "version" : "1.0.9"
+        "revision" : "c653c13cf857d6cd49eb918f95c804d1c6ff1ff7",
+        "version" : "1.0.12"
       }
     },
     {
