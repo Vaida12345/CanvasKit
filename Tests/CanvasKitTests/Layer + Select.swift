@@ -42,12 +42,25 @@ final class Layer_Select: TestingSuit {
     func select_by_color() async throws {
         let context = MetalContext()
         let layer = try await Layer(makeSampleCGImage(), context: context)
+        let mask = try await layer.select(by: .color(.black))
+        let size = layer.size
         
         try await writeAndCompare(
-            layer: layer.select(by: .color(.black)),
+            layer: mask,
             folder: "layer_select",
             name: "select_by_color.png"
         )
+        
+        do {
+            let layer = Layer(frame: CGRect(origin: .zero, size: size), context: context)
+            try await layer.fill(.red, selection: mask)
+            
+            try await writeAndCompare(
+                layer: layer,
+                folder: "layer_select",
+                name: "select_by_color_and_fill.png"
+            )
+        }
     }
     
     @Test

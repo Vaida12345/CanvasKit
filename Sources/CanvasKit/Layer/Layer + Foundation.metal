@@ -38,8 +38,9 @@ kernel void layer_fill_with_mask(texture2d<half, access::read_write> layer,
         if (color.presence[i])
             target[i] = half(color.components[i]);
     }
+    target[3] *= maskValue;
     
-    layer.write(target * maskValue, position);
+    layer.write(target, position);
 }
 
 kernel void layer_fill_linear_gradient_with_mask(texture2d<half, access::read_write> layer,
