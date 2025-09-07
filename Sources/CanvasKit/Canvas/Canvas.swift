@@ -14,6 +14,8 @@ import NativeImage
 /// A canvas, made up of images.
 ///
 /// - Important: You need to ensure that all layers of the same canvas share the same `MetalContext`.
+///
+/// A canvas does not contain size information, it only provides a coordinate space. All layer's `origin` are relative to the same coordinate space. In the coordinate space of `CanvasKit`, the origin lies on the top-left corner.
 public final class Canvas {
     
     /// The newer layers are on top.
