@@ -6,9 +6,9 @@
 using namespace metal;
 
 kernel void mask_fill_with(texture2d<half, access::write> texture,
-                           constant char& fill,
+                           constant uchar& fill,
                            uint2 position [[thread_position_in_grid]]) {
-    texture.write(half(fill) / 255, position);
+    texture.write(half(fill) / half(255), position);
 }
 
 

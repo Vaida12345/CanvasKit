@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Vaida12345/MetalManager.git",
       "state" : {
-        "revision" : "d3c7834ced9af4d8f1bca81c2ae9ec83bd9464e4",
-        "version" : "1.0.3"
+        "revision" : "f60439e1989d615b6c9d05f0e12b9f71f2b11cee",
+        "version" : "1.0.4"
       }
     },
     {
