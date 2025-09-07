@@ -74,4 +74,7 @@ Finally, we can render the canvas.
 let layer = try await canvas.makeLayer(width: 1024, height: 1024, context: context)
 return try await layer.render()
 ```
+<p align="center">
+  <img width="256" height="256" alt="advanced_blend_2" src="https://github.com/user-attachments/assets/15d6b886-fcc7-41d2-b5e6-521909a04f13"/>
+</p>
 
