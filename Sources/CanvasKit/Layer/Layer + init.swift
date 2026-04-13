@@ -12,6 +12,11 @@ import MetalManager
 
 
 
+private enum LayerInitializationError: Error {
+    case failedToRenderViewToImage
+}
+
+
 extension Layer {
     
     /// Initialize the container with the image given.
@@ -23,8 +28,9 @@ extension Layer {
     public convenience init(_ image: CGImage, origin: CGPoint = .zero, context: MetalContext) async throws {
         let device = CanvasKitConfiguration.computeDevice
         let texture = try await device.makeTexture(from: image, usage: .shaderReadWrite, context: context)
+        let colorSpace = image.colorSpace ?? CGColorSpaceCreateDeviceRGB()
         
-        self.init(texture: texture, origin: origin, colorSpace: image.colorSpace!, context: context)
+        self.init(texture: texture, origin: origin, colorSpace: colorSpace, context: context)
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
@@ -79,8 +85,8 @@ extension Layer {
     public convenience init(fill: PartialColor, width: Int, height: Int, origin: CGPoint = .zero, colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB(), context: MetalContext) async throws {
         self.init(width: width, height: height, origin: origin, colorSpace: colorSpace, context: context)
         
-        guard fill != .white else { return }
-        try await self.fill(fill, selection: Mask(repeating: 255, width: width, height: height, context: context))
+        guard fill != .clear else { return }
+        try await self.fill(fill)
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
@@ -96,11 +102,22 @@ extension Layer {
         self.texture.label = "Layer.Texture<(\(width), \(height), 4)>(origin: \(#function))"
     }
     
+    /// Initializes a layer by rendering a SwiftUI view into an image of the provided size.
+    ///
+    /// - Parameters:
+    ///   - view: The SwiftUI view to render.
+    ///   - size: The target render size.
+    ///   - context: The Metal context used by the resulting layer.
     @MainActor
     public convenience init(_ view: some View, size: CGSize, context: MetalContext) async throws {
         let renderer = ImageRenderer(content: view)
         renderer.proposedSize = .init(size)
-        try await self.init(renderer.cgImage!, context: context)
+        
+        guard let image = renderer.cgImage else {
+            throw LayerInitializationError.failedToRenderViewToImage
+        }
+        
+        try await self.init(image, context: context)
     }
     
 }

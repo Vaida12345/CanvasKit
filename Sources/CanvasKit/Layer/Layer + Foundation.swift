@@ -100,9 +100,12 @@ public extension Layer {
     func fill(_ color: PartialColor, selection rect: CGRect) async throws {
         let width = Int(rect.width.rounded(.toNearestOrAwayFromZero))
         let height = Int(rect.height.rounded(.toNearestOrAwayFromZero))
+        guard width > 0, height > 0 else { return }
         
-        let origin = SIMD2<UInt32>(UInt32(rect.origin.x.rounded(.toNearestOrAwayFromZero)), UInt32(rect.origin.y.rounded(.toNearestOrAwayFromZero)))
-        print("__marker__", origin)
+        let origin = SIMD2<Int32>(
+            Int32(rect.origin.x.rounded(.toNearestOrAwayFromZero)),
+            Int32(rect.origin.y.rounded(.toNearestOrAwayFromZero))
+        )
         
         try await MetalFunction(name: "layer_fill_with_rect", bundle: .module)
             .argument(texture: self.texture)
@@ -189,6 +192,8 @@ public extension Layer {
     /// ```swift
     /// CGRect(origin: -origin_on_new_canvas, size: size)
     /// ```
+    ///
+    /// Uses an integer-copy fast path when the origin rounds exactly to integral coordinates.
     func expanding(to rect: CGRect) async throws -> Layer {
         let width = Int(rect.width.rounded(.toNearestOrAwayFromZero))
         let height = Int(rect.height.rounded(.toNearestOrAwayFromZero))
@@ -196,11 +201,23 @@ public extension Layer {
         let newLayer = Layer(width: width, height: height, origin: origin + rect.origin, colorSpace: colorSpace, context: context)
         newLayer.texture.label = "Layer.Texture<(\(width), \(height))>(expandOf: \(self.texture.label ?? "(unknown)"), by: \(rect))"
         
-        try await MetalFunction(name: "layer_expand", bundle: .module)
-            .argument(texture: self.texture)
-            .argument(texture: newLayer.texture)
-            .argument(bytes: SIMD2<Float>(Float(rect.origin.x), Float(rect.origin.y)))
-            .dispatch(to: self.context, width: width, height: height)
+        let roundedX = rect.origin.x.rounded(.toNearestOrAwayFromZero)
+        let roundedY = rect.origin.y.rounded(.toNearestOrAwayFromZero)
+        let isIntegerOrigin = rect.origin.x == roundedX && rect.origin.y == roundedY
+        
+        if isIntegerOrigin {
+            try await MetalFunction(name: "layer_expand_int", bundle: .module)
+                .argument(texture: self.texture)
+                .argument(texture: newLayer.texture)
+                .argument(bytes: SIMD2<Int32>(Int32(roundedX), Int32(roundedY)))
+                .dispatch(to: self.context, width: width, height: height)
+        } else {
+            try await MetalFunction(name: "layer_expand", bundle: .module)
+                .argument(texture: self.texture)
+                .argument(texture: newLayer.texture)
+                .argument(bytes: SIMD2<Float>(Float(rect.origin.x), Float(rect.origin.y)))
+                .dispatch(to: self.context, width: width, height: height)
+        }
         
         return newLayer
     }
@@ -304,6 +321,65 @@ public extension Layer {
             .argument(texture: newLayer.texture)
             .argument(buffer: _kernel)
             .argument(bytes: SIMD2<Int32>(Int32(kernel.width), Int32(kernel.height)))
+            .argument(bytes: components)
+            .dispatch(to: self.context, width: self.width, height: self.height)
+        
+        return newLayer
+    }
+    
+    /// Returns a layer by applying separable Gaussian blur in two 1D passes.
+    ///
+    /// This is typically faster than full 2D convolution for larger radii.
+    ///
+    /// - Parameters:
+    ///   - radius: Radius of the Gaussian kernel.
+    ///   - distribution: Standard deviation (sigma) of the Gaussian distribution.
+    ///   - components: Channels to blur.
+    func gaussianBlur(radius: Int, distribution: Float = 0.5, components: Components = .all) async throws -> Layer {
+        precondition(radius >= 0, "Radius must be non-negative.")
+        precondition(distribution > 0, "Distribution must be positive.")
+        guard radius > 0 else { return try await self.copy() }
+        
+        let diameter = radius * 2 + 1
+        var kernel = [Float](repeating: 0, count: diameter)
+        
+        var sum: Float = 0
+        let denominator = 2 * distribution * distribution
+        for index in 0..<diameter {
+            let x = Float(index - radius)
+            let value = expf(-(x * x) / denominator)
+            kernel[index] = value
+            sum += value
+        }
+        
+        guard sum != 0 else { return try await self.copy() }
+        for index in 0..<diameter {
+            kernel[index] /= sum
+        }
+        
+        let kernelBuffer = try kernel.withUnsafeBufferPointer { buffer in
+            try CanvasKitConfiguration.computeDevice.makeBuffer(bytes: UnsafeMutableBufferPointer(mutating: buffer))
+        }
+        
+        let intermediate = Layer(width: self.width, height: self.height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
+        intermediate.texture.label = "Layer.Texture<(\(width), \(height), 4)>(gaussianIntermediateOf: \(self.texture.label ?? "(unknown)"))"
+        
+        try await MetalFunction(name: "layer_convolution_1d_horizontal", bundle: .module)
+            .argument(texture: self.texture)
+            .argument(texture: intermediate.texture)
+            .argument(buffer: kernelBuffer)
+            .argument(bytes: Int32(radius))
+            .argument(bytes: components)
+            .dispatch(to: self.context, width: self.width, height: self.height)
+        
+        let newLayer = Layer(width: self.width, height: self.height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
+        newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(gaussianOf: \(self.texture.label ?? "(unknown)"))"
+        
+        try await MetalFunction(name: "layer_convolution_1d_vertical", bundle: .module)
+            .argument(texture: intermediate.texture)
+            .argument(texture: newLayer.texture)
+            .argument(buffer: kernelBuffer)
+            .argument(bytes: Int32(radius))
             .argument(bytes: components)
             .dispatch(to: self.context, width: self.width, height: self.height)
         

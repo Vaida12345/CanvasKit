@@ -20,67 +20,80 @@ kernel void layer_duplicate_with_mask(texture2d<half, access::read>  input,
                                       texture2d<half, access::read>  mask,
                                       uint2 position [[thread_position_in_grid]]) {
     half maskValue = mask.read(position)[0];
-    if (!maskValue) return;
+    if (!maskValue) {
+        output.write(half4(0), position);
+        return;
+    }
     
     output.write(input.read(position) * maskValue, position);
 }
 
+/// Fills a layer with `color`, weighted by the mask alpha at each pixel.
 kernel void layer_fill_with_mask(texture2d<half, access::read_write> layer,
                                  texture2d<half, access::read> mask,
                                  constant PartialColor& color,
                                  uint2 position [[thread_position_in_grid]]) {
     half maskValue = mask.read(position)[0];
-    if (!maskValue) return;
-    
+    if (maskValue <= 0) return;
+
     half4 target = layer.read(position);
-    
+
     for (int i = 0; i < 4; i++) {
-        if (color.presence[i])
-            target[i] = half(color.components[i]);
+        if (!color.presence[i]) continue;
+
+        half replacement = half(color.components[i]);
+        target[i] = mix(target[i], replacement, maskValue);
     }
-    target[3] *= maskValue;
-    
+
     layer.write(target, position);
 }
 
+/// Fills a layer with a gradient, weighted by the mask alpha at each pixel.
 kernel void layer_fill_linear_gradient_with_mask(texture2d<half, access::read_write> layer,
                                                  texture2d<half, access::read> mask,
                                                  constant LinearGradient& gradient,
                                                  constant DiscreteRect& boundary,
                                                  uint2 position [[thread_position_in_grid]]) {
     half maskValue = mask.read(position)[0];
-    if (!maskValue) return;
-    
+    if (maskValue <= 0) return;
+
     half4 target = layer.read(position);
-    
+
     int d = int(gradient.direction);
-    
+
     for (int i = 0; i < 4; i++) {
         if (!gradient.startColor.presence[i]) continue;
         if (int(position[d]) < boundary.origin[d]) continue;
-        if (int(position[d]) > boundary.origin[d] + boundary.size[d]) continue;
-        
+        if (int(position[d]) >= boundary.origin[d] + boundary.size[d]) continue;
+
         float progress = float(position[d] - boundary.origin[d]) / float(boundary.size[d]);
-        target[i] = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
+        half replacement = half(gradient.startColor.components[i] * (1 - progress) + gradient.endColor.components[i] * progress);
+        target[i] = mix(target[i], replacement, maskValue);
     }
-    
+
     layer.write(target, position);
 }
 
 kernel void layer_fill_with_rect(texture2d<half, access::read_write> layer,
-                                 constant uint2& origin,
+                                 constant int2& origin,
                                  constant PartialColor& color,
                                  uint2 position [[thread_position_in_grid]]) {
-    uint2 target_position = position + origin;
+    int2 target_position = int2(position) + origin;
     
-    half4 target = half4(0);
+    if (target_position.x < 0 || target_position.y < 0 ||
+        target_position.x >= float(layer.get_width()) || target_position.y >= float(layer.get_height())) {
+        return;
+    }
+    
+    uint2 target = uint2(target_position);
+    half4 colorAtTarget = layer.read(target);
     
     for (int i = 0; i < 4; i++) {
         if (color.presence[i])
-            target[i] = half(color.components[i]);
+            colorAtTarget[i] = half(color.components[i]);
     }
     
-    layer.write(target, target_position);
+    layer.write(colorAtTarget, target);
 }
 
 kernel void layer_fill(texture2d<half, access::read_write> layer,
@@ -119,11 +132,27 @@ kernel void layer_expand(texture2d<half, access::sample>  input  [[texture(0)]],
                          uint2 dest [[thread_position_in_grid]]) {
     float2 source = float2(dest) + origin;
     
-    if (source.x < 0 || source.y < 0 || source.x > float(input.get_width()) || source.y > float(input.get_height())) return;
-    
+    if (source.x < 0 || source.y < 0 || source.x >= float(input.get_width()) || source.y >= float(input.get_height())) {
+        output.write(half4(0), dest);
+        return;
+    }
     
     half4 pixelValue = texture_sample_at(input, source);
     output.write(pixelValue, dest);
+}
+
+kernel void layer_expand_int(texture2d<half, access::read> input [[texture(0)]],
+                             texture2d<half, access::write> output [[texture(1)]],
+                             constant int2& origin,
+                             uint2 dest [[thread_position_in_grid]]) {
+    int2 source = int2(dest) + origin;
+    
+    if (source.x < 0 || source.y < 0 || source.x >= float(input.get_width()) || source.y >= float(input.get_height())) {
+        output.write(half4(0), dest);
+        return;
+    }
+    
+    output.write(input.read(uint2(source)), dest);
 }
 
 kernel void layer_invert(texture2d<half, access::read_write> layer,
@@ -193,6 +222,62 @@ kernel void layer_convolution(texture2d<half, access::read> input,
     output.write(sum, position);
 }
 
+kernel void layer_convolution_1d_horizontal(texture2d<half, access::read> input,
+                                            texture2d<half, access::write> output,
+                                            device const float* weights,
+                                            constant int& radius,
+                                            constant uchar& layerIndexes,
+                                            uint2 position [[thread_position_in_grid]]) {
+    half4 sum = half4(0);
+    int width = input.get_width();
+    
+    for (int dx = -radius; dx <= radius; dx++) {
+        int x = int(position.x) + dx;
+        x = x >= 0 ? x : abs(x) - 1;
+        x = x < width ? x : width - 1;
+        
+        half4 color = input.read(uint2(x, position.y));
+        sum += color * half(weights[dx + radius]);
+    }
+    
+    half4 originalColor = input.read(position);
+    for (int z = 0; z < 4; z++) {
+        if ((layerIndexes & (1 << z)) == 0) {
+            sum[z] = originalColor[z];
+        }
+    }
+    
+    output.write(sum, position);
+}
+
+kernel void layer_convolution_1d_vertical(texture2d<half, access::read> input,
+                                          texture2d<half, access::write> output,
+                                          device const float* weights,
+                                          constant int& radius,
+                                          constant uchar& layerIndexes,
+                                          uint2 position [[thread_position_in_grid]]) {
+    half4 sum = half4(0);
+    int height = input.get_height();
+    
+    for (int dy = -radius; dy <= radius; dy++) {
+        int y = int(position.y) + dy;
+        y = y >= 0 ? y : abs(y) - 1;
+        y = y < height ? y : height - 1;
+        
+        half4 color = input.read(uint2(position.x, y));
+        sum += color * half(weights[dy + radius]);
+    }
+    
+    half4 originalColor = input.read(position);
+    for (int z = 0; z < 4; z++) {
+        if ((layerIndexes & (1 << z)) == 0) {
+            sum[z] = originalColor[z];
+        }
+    }
+    
+    output.write(sum, position);
+}
+
 
 // Define a utility function to calculate the Lanczos kernel weight.
 float lanczosWeight(float x, float lanczos_kernel) {
@@ -238,16 +323,17 @@ kernel void lanczosResample(texture2d<half, access::sample> input,
 kernel void layer_duplicate_shift(texture2d<half, access::read>  input,
                                   texture2d<half, access::write> output,
                                   constant int2& shift,
-                                  uint2 input_position [[thread_position_in_grid]]) {
-    int2 output_position = int2(input_position) + shift;
+                                  uint2 output_position [[thread_position_in_grid]]) {
+    int2 input_position = int2(output_position) - shift;
     
-    if (output_position.x < 0 || output_position.y < 0) return;
+    if (input_position.x < 0 || input_position.y < 0 ||
+        input_position.x >= float(input.get_width()) || input_position.y >= float(input.get_height())) {
+        output.write(half4(0), output_position);
+        return;
+    }
     
-    uint2 position = uint2(output_position);
-    if (position.x > output.get_width() || position.y > output.get_height()) return;
-    
-    half4 color = input.read(input_position);
-    output.write(color, position);
+    half4 color = input.read(uint2(input_position));
+    output.write(color, output_position);
 }
 
 kernel void layer_duplicate_shift_float(texture2d<half, access::sample> input,
@@ -256,7 +342,11 @@ kernel void layer_duplicate_shift_float(texture2d<half, access::sample> input,
                                         uint2 output_position [[thread_position_in_grid]]) {
     float2 input_position = float2(output_position) - shift;
     
-    if (input_position.x < 0 || input_position.y < 0 || input_position.x > float(input.get_width()) || input_position.y > float(input.get_height())) return;
+    if (input_position.x < 0 || input_position.y < 0 ||
+        input_position.x >= float(input.get_width()) || input_position.y >= float(input.get_height())) {
+        output.write(half4(0), output_position);
+        return;
+    }
     
     half4 color = texture_sample_at(input, input_position);
     output.write(color, output_position);

@@ -89,5 +89,7 @@ kernel void layer_selectByPoint(texture2d<half, access::read>  layer,
     
     if (shouldSelect) {
         mask.write(1, position);
+    } else {
+        mask.write(0, position);
     }
 }

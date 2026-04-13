@@ -9,7 +9,6 @@ import Metal
 import Foundation
 import MetalManager
 import CoreGraphics
-import OSLog
 
 
 /// An immutable mask.
@@ -77,30 +76,38 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     /// - Complexity: **Calling this method would synchronize the context.** One could have chosen to return a `MetalDependentState`, and calculate the rect when required. But that would not make any differences. The return boundary is mainly used by the CPU to compute the actual size of the buffer, and create new buffers out of it. One way or another, the CPU must know the size of the boundary to allocate the textures.
     public func boundary() async throws -> CGRect {
         if let _boundary { return _boundary }
-        
+
         nonisolated(unsafe)
-        let rows = try MetalManager.computeDevice.makeBuffer(of: Bool.self, count: self.height)
+        let rows = try CanvasKitConfiguration.computeDevice.makeBuffer(of: Bool.self, count: self.height)
         nonisolated(unsafe)
-        let columns = try MetalManager.computeDevice.makeBuffer(of: Bool.self, count: self.width)
-        
+        let columns = try CanvasKitConfiguration.computeDevice.makeBuffer(of: Bool.self, count: self.width)
+
+        rows.contents().initializeMemory(as: UInt8.self, repeating: 0, count: rows.length)
+        columns.contents().initializeMemory(as: UInt8.self, repeating: 0, count: columns.length)
+
         try await MetalFunction(name: "mask_check_zeros_by_rows_columns", bundle: .module)
             .argument(texture: self.texture)
             .argument(buffer: rows)
             .argument(buffer: columns)
             .dispatch(to: self.context, width: self.width, height: self.height)
-        
+
         try await context.synchronize()
-        
+
         let _rows = UnsafeMutableBufferPointer(start: rows.contents().assumingMemoryBound(to: Bool.self), count: self.height)
         let _columns = UnsafeMutableBufferPointer(start: columns.contents().assumingMemoryBound(to: Bool.self), count: self.width)
-        
-        let x_start = _columns.firstIndex(of: true) ?? 0
-        let x_end   = _columns.lastIndex(of: true)  ?? 0
-        
-        let y_start = _rows.firstIndex(of: true) ?? 0
-        let y_end   = _rows.lastIndex(of: true)  ?? 0
-        
-        return CGRect(x: x_start, y: y_start, width: x_end - x_start + 1, height: y_end - y_start + 1)
+
+        guard let xStart = _columns.firstIndex(of: true),
+              let xEnd = _columns.lastIndex(of: true),
+              let yStart = _rows.firstIndex(of: true),
+              let yEnd = _rows.lastIndex(of: true) else {
+            let boundary = CGRect.zero
+            self._boundary = boundary
+            return boundary
+        }
+
+        let boundary = CGRect(x: xStart, y: yStart, width: xEnd - xStart + 1, height: yEnd - yStart + 1)
+        self._boundary = boundary
+        return boundary
     }
     
     
@@ -141,6 +148,8 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     /// ```swift
     /// CGRect(origin: -origin_on_new_canvas, size: size)
     /// ```
+    ///
+    /// Uses an integer-copy fast path when the origin rounds exactly to integral coordinates.
     public func expanding(to rect: CGRect) async throws -> Mask {
         let width = Int(rect.width.rounded(.toNearestOrAwayFromZero))
         let height = Int(rect.height.rounded(.toNearestOrAwayFromZero))
@@ -148,13 +157,26 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         let newTexture = Mask.makeTexture(width: width, height: height)
         newTexture.label = "Mask.Texture<(\(width), \(height))>(expandOf: \(self.texture.label ?? "(unknown)"), by: \(rect))"
         
-        try await MetalFunction(name: "mask_expand", bundle: .module)
-            .argument(texture: self.texture)
-            .argument(texture: newTexture)
-            .argument(bytes: SIMD2<Float>(Float(rect.origin.x), Float(rect.origin.y)))
-            .dispatch(to: self.context, width: width, height: height)
+        let roundedX = rect.origin.x.rounded(.toNearestOrAwayFromZero)
+        let roundedY = rect.origin.y.rounded(.toNearestOrAwayFromZero)
+        let isIntegerOrigin = rect.origin.x == roundedX && rect.origin.y == roundedY
         
-        return Mask(texture: newTexture, context: self.context, _isEmpty: self._isEmpty)
+        if isIntegerOrigin {
+            try await MetalFunction(name: "mask_expand_int", bundle: .module)
+                .argument(texture: self.texture)
+                .argument(texture: newTexture)
+                .argument(bytes: SIMD2<Int32>(Int32(roundedX), Int32(roundedY)))
+                .dispatch(to: self.context, width: width, height: height)
+        } else {
+            try await MetalFunction(name: "mask_expand", bundle: .module)
+                .argument(texture: self.texture)
+                .argument(texture: newTexture)
+                .argument(bytes: SIMD2<Float>(Float(rect.origin.x), Float(rect.origin.y)))
+                .dispatch(to: self.context, width: width, height: height)
+        }
+        
+        // Expanding can introduce or remove visible pixels depending on overlap, so caches are invalidated.
+        return Mask(texture: newTexture, context: self.context)
     }
     
     /// Crop the Mask.
@@ -202,7 +224,8 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
             .dispatch(to: self.context, width: self.width, height: self.height)
         
         newTexture.label = "Mask.Texture<(\(width), \(height))>(quantizedFrom: \(self.texture.label ?? "(unknown)"))"
-        return Mask(texture: newTexture, context: self.context, _isEmpty: self._isEmpty, _boundary: self._boundary)
+        // Quantization changes occupancy and boundary, so cached derived values cannot be reused.
+        return Mask(texture: newTexture, context: self.context)
     }
     
     public func render() async throws -> CGImage {

@@ -22,11 +22,25 @@ public final class Canvas {
     public var layers: [Layer]
     
     
+    /// Composites all layers into a single output layer.
+    ///
+    /// - Parameters:
+    ///   - width: The width of the output layer.
+    ///   - height: The height of the output layer.
+    ///   - context: The context used to schedule the composite pass.
+    ///
+    /// Layers that do not intersect the output bounds are culled before compositing.
     public func makeLayer(width: Int, height: Int, context: MetalContext) async throws -> Layer {
         let size = CGSize(width: width, height: height)
+        let outputRect = CGRect(origin: .zero, size: size)
+        let visibleLayers = layers.filter { $0.frame.intersects(outputRect) }
         
-        if layers.count == 1,
-           let layer = layers.first {
+        guard !visibleLayers.isEmpty else {
+            return Layer(width: width, height: height, context: context)
+        }
+        
+        if visibleLayers.count == 1,
+           let layer = visibleLayers.first {
             return try await layer.expanding(to: CGRect(origin: -layer.origin, size: size))
         }
         
@@ -36,7 +50,7 @@ public final class Canvas {
         descriptor.dataType = .texture
         descriptor.index = 0
         descriptor.access = .readWrite
-        descriptor.arrayLength = layers.count
+        descriptor.arrayLength = visibleLayers.count
         descriptor.textureType = .type2D
         
         let encoder = device.makeArgumentEncoder(arguments: [descriptor])!
@@ -44,25 +58,23 @@ public final class Canvas {
         let argumentBuffer = device.makeBuffer(length: encoder.encodedLength)!
         encoder.setArgumentBuffer(argumentBuffer, offset: 0)
         
-        for (index, layer) in self.layers.enumerated() {
+        for (index, layer) in visibleLayers.enumerated() {
             encoder.setTexture(layer.texture, index: index)
         }
         
-        let originsBuffer = UnsafeMutableBufferPointer<SIMD2<Float>>.allocate(capacity: layers.count)
-        
-        for (index, layer) in self.layers.enumerated() {
-            originsBuffer.initializeElement(at: index, to: SIMD2(Float(layer.origin.x),
-                                                                 Float(layer.origin.y)))
+        let origins = visibleLayers.map { layer in
+            SIMD2<Float>(Float(layer.origin.x), Float(layer.origin.y))
         }
-        let buffer = try device.makeBuffer(bytes: originsBuffer)
-        originsBuffer.deallocate()
+        let buffer = try origins.withUnsafeBufferPointer { buffer in
+            try device.makeBuffer(bytes: UnsafeMutableBufferPointer(mutating: buffer))
+        }
         
         let resultLayer = Layer(width: width, height: height, context: context)
         
         try await MetalFunction(name: "canvas_make_texture", bundle: .module)
             .argument(buffer: argumentBuffer)
             .argument(buffer: buffer)
-            .argument(bytes: Int32(self.layers.count))
+            .argument(bytes: Int32(visibleLayers.count))
             .argument(texture: resultLayer.texture)
             .dispatch(to: context, width: width, height: height)
         

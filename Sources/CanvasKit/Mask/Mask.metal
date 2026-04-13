@@ -74,10 +74,27 @@ kernel void mask_expand(texture2d<half, access::sample>  input  [[texture(0)]],
                         uint2 dest [[thread_position_in_grid]]) {
     float2 source = float2(dest) + origin;
     
-    if (source.x < 0 || source.y < 0 || source.x > float(input.get_width()) || source.y > float(input.get_height())) return;
+    if (source.x < 0 || source.y < 0 || source.x >= float(input.get_width()) || source.y >= float(input.get_height())) {
+        output.write(0, dest);
+        return;
+    }
     
     half pixelValue = texture_sample_at(input, source).r;
     output.write(pixelValue, dest);
+}
+
+kernel void mask_expand_int(texture2d<half, access::read> input [[texture(0)]],
+                            texture2d<half, access::write> output [[texture(1)]],
+                            constant int2& origin,
+                            uint2 dest [[thread_position_in_grid]]) {
+    int2 source = int2(dest) + origin;
+    
+    if (source.x < 0 || source.y < 0 || source.x >= float(input.get_width()) || source.y >= float(input.get_height())) {
+        output.write(0, dest);
+        return;
+    }
+    
+    output.write(input.read(uint2(source)).r, dest);
 }
 
 
@@ -86,8 +103,10 @@ kernel void mask_quantize(texture2d<half, access::read>  input  [[texture(0)]],
                           constant float& tolerance,
                           uint2 position [[thread_position_in_grid]]) {
     half value = input.read(position).r;
-    
+
     if (value > half(tolerance)) {
         output.write(1, position);
+    } else {
+        output.write(0, position);
     }
 }

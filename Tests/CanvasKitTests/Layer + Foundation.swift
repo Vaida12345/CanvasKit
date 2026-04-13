@@ -14,6 +14,7 @@ import NativeImage
 @testable
 import MetalManager
 import AppKit
+import Metal
 
 
 extension Tag {
@@ -26,6 +27,24 @@ final class Layer_Foundation: TestingSuit {
     
     override func folder() -> String {
         "Layer"
+    }
+
+    /// Reads one RGBA pixel and returns channel values in `0...255`.
+    private func readPixel(_ layer: Layer, x: Int = 0, y: Int = 0) async throws -> SIMD4<UInt8> {
+        try await layer.context.synchronize()
+        let buffer = try layer.texture.makeBuffer(channelsCount: 4)
+        defer { buffer.deallocate() }
+
+        let index = (y * layer.width + x) * 4
+        return SIMD4(buffer[index], buffer[index + 1], buffer[index + 2], buffer[index + 3])
+    }
+
+    /// Asserts each channel in `pixel` is within `range`.
+    private func expectPixel(_ pixel: SIMD4<UInt8>, within range: ClosedRange<UInt8>) {
+        #expect(range.contains(pixel[0]))
+        #expect(range.contains(pixel[1]))
+        #expect(range.contains(pixel[2]))
+        #expect(range.contains(pixel[3]))
     }
     
     @Test
@@ -194,6 +213,31 @@ final class Layer_Foundation: TestingSuit {
         )
     }
     
+    @Test
+    func layer_fill_with_partial_mask_uses_mask_alpha() async throws {
+        let context = MetalContext()
+        let layer = try await Layer(fill: .white, width: 1, height: 1, context: context)
+        let mask = try await Mask(repeating: 128, width: 1, height: 1, context: context)
+
+        try await layer.fill(.clear, selection: mask)
+
+        let pixel = try await readPixel(layer)
+        expectPixel(pixel, within: 127...128)
+    }
+
+    @Test
+    func layer_fill_gradient_with_partial_mask_uses_mask_alpha() async throws {
+        let context = MetalContext()
+        let layer = Layer(width: 1, height: 1, context: context)
+        let mask = try await Mask(repeating: 128, width: 1, height: 1, context: context)
+        let gradient = LinearGradient(start: .white, end: .white, direction: .horizontal)
+
+        try await layer.fill(gradient, selection: mask)
+
+        let pixel = try await readPixel(layer)
+        expectPixel(pixel, within: 127...128)
+    }
+
     @Test
     func layer_resize() async throws {
         let context = MetalContext()

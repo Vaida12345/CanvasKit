@@ -21,8 +21,11 @@ public struct SelectByColorFromPoint: SelectionCriteria {
     let contiguous: Bool
     
     
+    /// Selects pixels that match the color sampled at `index`.
+    ///
+    /// - Important: `index` must be inside the layer bounds.
     public func select(layer: Layer) async throws -> Mask {
-        precondition(index.x <= layer.width && index.y <= layer.height)
+        precondition(index.x < layer.width && index.y < layer.height)
         
         let texture = Mask.makeTexture(width: layer.width, height: layer.height)
         
@@ -37,36 +40,46 @@ public struct SelectByColorFromPoint: SelectionCriteria {
         
         guard contiguous else { return mask }
         
-        
         try await mask.context.synchronize()
         let originalMaskBuffer = try mask.texture.makeBuffer(channelsCount: 1)
+        defer { originalMaskBuffer.deallocate() }
         let width = mask.width
+        let height = mask.height
         
-        let maskLength = (layer.width * layer.height)
+        let maskLength = width * height
         let maskBuffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: maskLength)
         maskBuffer.initialize(repeating: 0)
+        defer { maskBuffer.deallocate() }
         
         let queue = RingBuffer<Index>()
-        queue.append(index)
+        let isVisited = BoolMatrix(width: width, height: height, fill: false)
         
-        let isVisited = BoolMatrix(width: layer.width, height: layer.height, fill: false)
-        
-        while let next = queue.next() {
-            if !isVisited[next] && originalMaskBuffer[next.flatten(width: width)] != 0 {
-                isVisited[next] = true
-                maskBuffer[next.flatten(width: width)] = 255
-                
-                for adjacent in next.adjacent(width: layer.width, height: layer.height) {
-                    if !isVisited[adjacent] && originalMaskBuffer[adjacent.flatten(width: width)] != 0 {
-                        queue.append(adjacent)
-                    }
-                }
-            }
+        isVisited[index] = true
+        if originalMaskBuffer[index.flatten(width: width)] != 0 {
+            queue.append(index)
         }
         
-        let newMaskTexture = Mask.makeTexture(width: mask.width, height: mask.height)
-        newMaskTexture.replace(region: MTLRegionMake2D(0, 0, mask.width, mask.height), mipmapLevel: 0, withBytes: maskBuffer.baseAddress!, bytesPerRow: mask.width)
-        maskBuffer.deallocate()
+        while let next = queue.next() {
+            let flattened = next.flatten(width: width)
+            maskBuffer[flattened] = 255
+            
+            @inline(__always)
+            func enqueueIfNeeded(_ candidate: Index?) {
+                guard let candidate else { return }
+                guard !isVisited[candidate] else { return }
+                isVisited[candidate] = true
+                guard originalMaskBuffer[candidate.flatten(width: width)] != 0 else { return }
+                queue.append(candidate)
+            }
+            
+            enqueueIfNeeded(next.move(down: 0, right: 1, width: width, height: height))
+            enqueueIfNeeded(next.move(down: 1, right: 0, width: width, height: height))
+            enqueueIfNeeded(next.move(down: 0, right: -1, width: width, height: height))
+            enqueueIfNeeded(next.move(down: -1, right: 0, width: width, height: height))
+        }
+        
+        let newMaskTexture = Mask.makeTexture(width: width, height: height)
+        newMaskTexture.replace(region: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0, withBytes: maskBuffer.baseAddress!, bytesPerRow: width)
         
         return Mask(texture: newMaskTexture, context: mask.context)
     }
