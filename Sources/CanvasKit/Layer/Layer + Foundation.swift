@@ -17,6 +17,8 @@ public extension Layer {
     /// Copy the layer.
     ///
     /// Performs a bit-wise copying, so that the new layer is detached from the original one.
+    ///
+    /// - SeeAlso: ``copy(selection:)``
     func copy() async throws -> Layer {
         let newLayer = Layer(width: self.width, height: self.height, origin: self.origin, colorSpace: self.colorSpace, context: self.context)
         newLayer.texture.label = "Layer.Texture<(\(width), \(height), 4)>(copiedFrom: \(self.texture.label ?? "(unknown)"))"
@@ -29,12 +31,10 @@ public extension Layer {
         return newLayer
     }
     
-    /// Copy the layer.
-    ///
-    /// Performs a bit-wise copying, so that the new layer is detached from the original one.
+    /// Copy the layer, only copying pixels within the given `selection` mask.
     ///
     /// - Parameters:
-    ///   - selection: If provided, only the selected region will be copied.
+    ///   - selection: Only the selected region will be copied.
     func copy(selection: Mask) async throws -> Layer {
         precondition(selection.size == self.size, "Attempting to apply a mask to an layer of different size. Tip: You can use `Mask.expanding(to:)` to expand or shrink the mask.")
         
@@ -224,31 +224,7 @@ public extension Layer {
     
     /// Crop the Layer.
     ///
-    /// - Note: This does exactly the same as ``expanding(to:)``
-    ///
-    /// The `origin` is the point relative to the original `(0, 0)`.
-    ///
-    /// The current layer would be drawn on the new layer using this computation:
-    /// ```swift
-    /// newPixel.position = oldPixel.position - rect.origin
-    /// ```
-    ///
-    /// This is intuitive, for example
-    ///
-    /// If you would like it to stay at the center of the canvas, use
-    ///
-    /// ``` swift
-    /// CGRect(center: self.frame.center, size: size)
-    /// ```
-    ///
-    /// - If `size > frame.size`, the origin is a negative number, the new pixels are mapped to a higher index.
-    /// - If `size < frame.size`, the origin is a positive number, the new pixels are mapped to a lower index.
-    ///
-    /// To explicitly state the origin on the *new* canvas, use
-    ///
-    /// ```swift
-    /// CGRect(origin: -origin_on_new_canvas, size: size)
-    /// ```
+    /// - SeeAlso: ``expanding(to:)``
     func cropping(to rect: CGRect) async throws -> Layer {
         try await self.expanding(to: rect)
     }

@@ -40,12 +40,14 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
         CGSize(width: width, height: height)
     }
     
+    private let cacheLock = NSLock()
+    
     /// Is fully zero.
     private var _isEmpty: MetalDependentState<Bool>? = nil
     
     /// Is fully zero.
     public func isEmpty() async throws -> MetalDependentState<Bool> {
-        if let _isEmpty { return _isEmpty }
+        if let cached = cacheLock.withLock({ self._isEmpty }) { return cached }
         
         let state = MetalDependentState(initialValue: true, context: context)
         
@@ -54,7 +56,7 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
             .argument(state: state)
             .dispatch(to: context, width: self.width, height: self.height)
         
-        self._isEmpty = state
+        cacheLock.withLock { self._isEmpty = state }
         
         return state
     }
@@ -75,38 +77,38 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     ///
     /// - Complexity: **Calling this method would synchronize the context.** One could have chosen to return a `MetalDependentState`, and calculate the rect when required. But that would not make any differences. The return boundary is mainly used by the CPU to compute the actual size of the buffer, and create new buffers out of it. One way or another, the CPU must know the size of the boundary to allocate the textures.
     public func boundary() async throws -> CGRect {
-        if let _boundary { return _boundary }
-
+        if let cached = cacheLock.withLock({ self._boundary }) { return cached }
+        
         nonisolated(unsafe)
         let rows = try CanvasKitConfiguration.computeDevice.makeBuffer(of: Bool.self, count: self.height)
         nonisolated(unsafe)
         let columns = try CanvasKitConfiguration.computeDevice.makeBuffer(of: Bool.self, count: self.width)
-
+        
         rows.contents().initializeMemory(as: UInt8.self, repeating: 0, count: rows.length)
         columns.contents().initializeMemory(as: UInt8.self, repeating: 0, count: columns.length)
-
+        
         try await MetalFunction(name: "mask_check_zeros_by_rows_columns", bundle: .module)
             .argument(texture: self.texture)
             .argument(buffer: rows)
             .argument(buffer: columns)
             .dispatch(to: self.context, width: self.width, height: self.height)
-
+        
         try await context.synchronize()
-
+        
         let _rows = UnsafeMutableBufferPointer(start: rows.contents().assumingMemoryBound(to: Bool.self), count: self.height)
         let _columns = UnsafeMutableBufferPointer(start: columns.contents().assumingMemoryBound(to: Bool.self), count: self.width)
-
-        guard let xStart = _columns.firstIndex(of: true),
-              let xEnd = _columns.lastIndex(of: true),
-              let yStart = _rows.firstIndex(of: true),
-              let yEnd = _rows.lastIndex(of: true) else {
-            let boundary = CGRect.zero
-            self._boundary = boundary
-            return boundary
+        
+        let boundary: CGRect
+        if let xStart = _columns.firstIndex(of: true),
+           let xEnd = _columns.lastIndex(of: true),
+           let yStart = _rows.firstIndex(of: true),
+           let yEnd = _rows.lastIndex(of: true) {
+            boundary = CGRect(x: xStart, y: yStart, width: xEnd - xStart + 1, height: yEnd - yStart + 1)
+        } else {
+            boundary = .zero
         }
-
-        let boundary = CGRect(x: xStart, y: yStart, width: xEnd - xStart + 1, height: yEnd - yStart + 1)
-        self._boundary = boundary
+        
+        cacheLock.withLock { self._boundary = boundary }
         return boundary
     }
     
@@ -206,6 +208,8 @@ public final class Mask: LayerProtocol, @unchecked Sendable {
     /// ```swift
     /// CGRect(origin: -origin_on_new_canvas, size: size)
     /// ```
+    ///
+    /// - SeeAlso: ``expanding(to:)``
     public func cropping(to rect: CGRect) async throws -> Mask {
         try await self.expanding(to: rect)
     }

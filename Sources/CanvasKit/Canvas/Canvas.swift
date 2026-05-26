@@ -11,6 +11,12 @@ import Metal
 import NativeImage
 
 
+enum CanvasError: Error {
+    case argumentEncoderCreationFailed
+    case argumentBufferCreationFailed
+}
+
+
 /// A canvas, made up of images.
 ///
 /// - Important: You need to ensure that all layers of the same canvas share the same `MetalContext`.
@@ -53,9 +59,13 @@ public final class Canvas {
         descriptor.arrayLength = visibleLayers.count
         descriptor.textureType = .type2D
         
-        let encoder = device.makeArgumentEncoder(arguments: [descriptor])!
+        guard let encoder = device.makeArgumentEncoder(arguments: [descriptor]) else {
+            throw CanvasError.argumentEncoderCreationFailed
+        }
         encoder.label = "ArgumentEncoder(for \(#function))"
-        let argumentBuffer = device.makeBuffer(length: encoder.encodedLength)!
+        guard let argumentBuffer = device.makeBuffer(length: encoder.encodedLength) else {
+            throw CanvasError.argumentBufferCreationFailed
+        }
         encoder.setArgumentBuffer(argumentBuffer, offset: 0)
         
         for (index, layer) in visibleLayers.enumerated() {

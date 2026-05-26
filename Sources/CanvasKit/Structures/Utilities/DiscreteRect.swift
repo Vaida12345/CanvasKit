@@ -8,7 +8,7 @@
 import CoreGraphics
 
 
-struct DiscreteRect {
+struct DiscreteRect: Sendable {
     
     let origin: SIMD2<Int32>
     

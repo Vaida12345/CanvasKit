@@ -204,8 +204,11 @@ kernel void layer_convolution(texture2d<half, access::read> input,
             int2 _position = int2(position) + delta;
             
             for (int k = 0; k < 2; k++) {
-                _position[k] = _position[k] >= 0 ? _position[k] : abs(_position[k]) - 1; // reflective padding
-                _position[k] = _position[k] < texture_size[k] ? _position[k] : texture_size[k]  - 1;
+                if (_position[k] < 0) {
+                    _position[k] = -_position[k] - 1;
+                } else if (_position[k] >= texture_size[k]) {
+                    _position[k] = 2 * texture_size[k] - _position[k] - 1;
+                }
             }
             
             half4 color = input.read(uint2(_position));
@@ -233,8 +236,11 @@ kernel void layer_convolution_1d_horizontal(texture2d<half, access::read> input,
     
     for (int dx = -radius; dx <= radius; dx++) {
         int x = int(position.x) + dx;
-        x = x >= 0 ? x : abs(x) - 1;
-        x = x < width ? x : width - 1;
+        if (x < 0) {
+            x = -x - 1;
+        } else if (x >= width) {
+            x = 2 * width - x - 1;
+        }
         
         half4 color = input.read(uint2(x, position.y));
         sum += color * half(weights[dx + radius]);
@@ -261,8 +267,11 @@ kernel void layer_convolution_1d_vertical(texture2d<half, access::read> input,
     
     for (int dy = -radius; dy <= radius; dy++) {
         int y = int(position.y) + dy;
-        y = y >= 0 ? y : abs(y) - 1;
-        y = y < height ? y : height - 1;
+        if (y < 0) {
+            y = -y - 1;
+        } else if (y >= height) {
+            y = 2 * height - y - 1;
+        }
         
         half4 color = input.read(uint2(position.x, y));
         sum += color * half(weights[dy + radius]);

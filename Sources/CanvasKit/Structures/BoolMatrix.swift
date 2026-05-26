@@ -6,7 +6,7 @@
 //
 
 
-final class BoolMatrix {
+final class BoolMatrix: @unchecked Sendable {
     
     let width: Int
     
@@ -62,7 +62,7 @@ final class BoolMatrix {
             let index = initial / 8
             let offset = initial % 8
             
-            return self.buffer[index] & 1 << offset != 0
+            return (self.buffer[index] & (1 << offset)) != 0
         }
         set {
             let initial = y &* width &+ x
